@@ -97,47 +97,41 @@ BASE_HTML = """
 
     query = 'SELECT j.*, c.company_name, c.logo FROM jobs j JOIN companies c ON j.company_id = c.id WHERE j.status="Active"'
     params = []
-    if search:
-        query += ' AND j.title LIKE?'
-        params.append(f'%{search}%')
-    if location:
-        query += ' AND j.location=?'
-        params.append(location)
-    if category:
-        query += ' AND j.category=?'
-        params.append(category)
-    query += ' ORDER BY j.id DESC LIMIT 50'
-
-    jobs = conn.execute(query, params).fetchall()
-    conn.close()
-
-    job_cards = ""
+        job_cards = ""
     for job in jobs:
         logo = f'<img src="/{job["logo"]}" width="60" height="60" class="rounded border">' if job["logo"] else '<div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="fas fa-building fa-2x"></i></div>'
         skills = job["skills"].split(',')[:3] if job["skills"] else []
         skill_badges = ''.join([f'<span class="badge badge-skill">{s.strip()}</span>' for s in skills])
+        job_cards += '<div class="col-lg-6 mb-4"><div class="card job-card h-100"><div class="card-body">'
+        job_cards += '<div class="d-flex mb-3">' + logo + '<div class="ms-3 flex-grow-1">'
+        job_cards += '<h5 class="card-title mb-1">' + job["title"] + '</h5>'
+        job_cards += '<p class="text-muted mb-0"><i class="fas fa-building"></i> ' + job["company_name"] + '</p></div>'
+        job_cards += '<span class="badge bg-success">Active</span></div>'
+        job_cards += '<div class="mb-2"><span class="me-3"><i class="fas fa-map-marker-alt text-danger"></i> ' + job["location"] + '</span>'
+        job_cards += '<span class="me-3"><i class="fas fa-rupee-sign text-success"></i> ' + job["salary"] + '</span>'
+        job_cards += '<span><i class="fas fa-briefcase text-info"></i> ' + job["experience"] + '</span></div>'
+        job_cards += '<div class="mb-3">' + skill_badges + '</div>'
+        job_cards += '<div class="d-flex justify-content-between align-items-center"><span class="badge bg-primary">' + job["category"] + '</span>'
+        job_cards += '<a href="/job/' + str(job["id"]) + '" class="btn btn-primary btn-sm">View & Apply <i class="fas fa-arrow-right"></i></a></div>'
+        job_cards += '</div></div></div>'
 
-        job_cards += f"""
-        <div class="col-lg-6 mb-4">
-            <div class="card job-card h-100">
-                <div class="card-body">
-                    <div class="d-flex mb-3">
-                        {logo}
-                        <div class="ms-3 flex-grow-1">
-                            <h5 class="card-title mb-1">{job["title"]}</h5>
-                            <p class="text-muted mb-0"><i class="fas fa-building"></i> {job["company_name"]}</p>
-                        </div>
-                        <span class="badge bg-success">Active</span>
-                    </div>
-                    <div class="mb-2">
-                        <span class="me-3"><i class="fas fa-map-marker-alt text-danger"></i> {job["location"]}</span>
-                        <span class="me-3"><i class="fas fa-rupee-sign text-success"></i> {job["salary"]}</span>
-                        <span><i class="fas fa-briefcase text-info"></i> {job["experience"]}</span>
-                    </div>
-                    <div class="mb-3">{skill_badges}</div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge bg-primary">{job["category"]}</span>
-                        <a href="/job/{job["id"]}" class="btn btn-primary btn-sm">View & Apply <i class="fas fa-arrow-right"></i></a>
+    search_form = '<div class="hero"><div class="container text-center">'
+    search_form += '<h1 class="display-4 fw-bold mb-4">Find Your Dream Job</h1>'
+    search_form += '<p class="lead mb-4">50,000+ Jobs from Top Companies</p>'
+    search_form += '<form class="row g-2 justify-content-center" method="get">'
+    search_form += '<div class="col-md-4"><input name="search" class="form-control form-control-lg" placeholder="Job Title, Skills" value="' + search + '"></div>'
+    search_form += '<div class="col-md-3"><select name="location" class="form-select form-select-lg">'
+    search_form += '<option value="">All Locations</option>'
+    search_form += ''.join([f'<option {"selected" if location==loc else ""}>{loc}</option>' for loc in LOCATIONS])
+    search_form += '</select></div><div class="col-md-3"><select name="category" class="form-select form-select-lg">'
+    search_form += '<option value="">All Categories</option>'
+    search_form += ''.join([f'<option {"selected" if category==cat else ""}>{cat}</option>' for cat in JOB_CATEGORIES])
+    search_form += '</select></div><div class="col-md-2"><button class="btn btn-warning btn-lg w-100"><i class="fas fa-search"></i> Search</button></div>'
+    search_form += '</form></div></div>'
+
+    content = search_form + '<div class="container mt-5"><h3 class="mb-4">Latest Jobs (' + str(len(jobs)) + ' Results)</h3>'
+    content += '<div class="row">' + (job_cards if job_cards else '<div class="col-12 text-center py-5"><h4>No jobs found</h4><p>Try different keywords or check back later</p></div>') + '</div></div>'
+    return render_template_string(BASE_HTML, content=content)
                     </div>
                 </div>
             </div>
