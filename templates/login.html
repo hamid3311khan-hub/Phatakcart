@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Company Login - Surejob</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body{font-family:Arial;max-width:400px;margin:50px auto;padding:20px}
+        input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:5px}
+        button{width:100%;padding:12px;background:#FF6B35;color:white;border:none;border-radius:5px;font-size:16px}
+      .flash{padding:10px;margin:10px 0;border-radius:5px}
+      .success{background:#d4edda;color:#155724}
+      .error{background:#f8d7da;color:#721c24}
+    </style>
+</head>
+<body>
+    <h2>Surejob 🔥 - Company Login</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <input type="email" name="email" placeholder="Official Email *" required>
+        <input type="password" name="password" placeholder="Password *" required>
+        <button type="submit">Login Karo</button>
+    </form>
+    <p>New Company? <a href="/register">Register FREE</a></p>
+</body>
+</html>
