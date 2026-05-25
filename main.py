@@ -266,4 +266,96 @@ def dashboard():
     return render_template_string(BASE_HTML + '''
 <div class="container">
 <div class="dashboard-header">
-<div style="display:flex
+<div style="display:flex;align-items:center;gap:20px;">
+{% if company['logo'] %}
+<img src="{{company['logo']}}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;">
+{% endif %}
+<div>
+<h2>Welcome, {{company['company_name']}}</h2>
+<p>🎁 60 Din FREE Plan Active | Expiry: {{company['plan_expiry']}}</p>
+</div></div>
+<a href="/post-job" class="btn call-btn" style="margin-top:15px;">+ Nayi Job Post Karo</a>
+</div>
+
+<h3>Aapki Posted Jobs: {{jobs|length}}</h3>
+{% for job in jobs %}
+<div class="job-list-item">
+<div>
+<b>{{job['title']}}</b> - {{job['location']}} | {{job['category']}}<br>
+<small>Posted: {{job['posted_on']}}</small>
+</div>
+<a href="/delete-job/{{job['id']}}" class="btn delete-btn" onclick="return confirm('Job delete karni hai?')">❌ Delete</a>
+</div>
+{% endfor %}
+<div style="text-align:center;margin-top:30px;">
+<a href="/logout" style="color:#f44336;">🚪 Logout</a>
+</div></div></body></html>
+''', company=company, jobs=jobs)
+
+@app.route('/post-job', methods=['GET','POST'])
+def post_job():
+    if 'company_id' not in session: return redirect(url_for('login'))
+    if request.method == 'POST':
+        try:
+            conn = get_db()
+            conn.execute('INSERT INTO jobs (company_id,title,location,salary,experience,category,description,contact,posted_on) VALUES (?,?,?,?,?,?,?,?,?)',
+                (session['company_id'], request.form['title'], request.form['location'], request.form['salary'],
+                 request.form['experience'], request.form['category'], request.form['description'],
+                 request.form['contact'], datetime.now().strftime('%d %b %Y')))
+            conn.commit()
+            conn.close()
+            flash('Job Successfully Posted! 🎉', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            flash('Error posting job. Try again.', 'error')
+    return render_template_string(BASE_HTML + '''
+<div class="form-card">
+<h2>Nayi Job Post Karo - FREE</h2>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for category, message in messages %}
+<div class="alert alert-{{category}}">{{message}}</div>
+{% endfor %}{% endif %}{% endwith %}
+<form method="POST">
+<input name="title" placeholder="Job Title" required>
+<input name="location" placeholder="Location - Mumbai, Delhi" required>
+<input name="salary" placeholder="Salary - 25000/month">
+<select name="experience" required>
+<option value="">Experience Select Karo</option>
+<option>Fresher</option><option>1-2 Years</option><option>2-5 Years</option><option>5+ Years</option>
+</select>
+<select name="category" required>
+<option value="">Category Select Karo</option>
+{% for cat in categories %}<option>{{cat}}</option>{% endfor %}
+</select>
+<textarea name="description" placeholder="Job Description" rows="4" required></textarea>
+<input name="contact" placeholder="HR Contact Number" required>
+<button type="submit">Job Post Karo - FREE</button>
+</form></div></body></html>
+''', categories=JOB_CATEGORIES)
+
+@app.route('/delete-job/<int:job_id>')
+def delete_job(job_id):
+    if 'company_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    conn.execute('DELETE FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
+    conn.commit()
+    conn.close()
+    flash('Job Deleted Successfully!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template_string(BASE_HTML + '<div class="container"><h2>404 - Page Not Found</h2></div></body></html>'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template_string(BASE_HTML + '<div class="container"><h2>500 - Server Error. Try Again</h2></div></body></html>'), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
