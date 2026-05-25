@@ -6,6 +6,11 @@ import os
 app = Flask(__name__)
 app.secret_key = 'surejob_secret_key_2026'
 
+# Render pe upload folder banane ke liye
+UPLOAD_FOLDER = 'static/logos'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 def get_db():
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
@@ -13,32 +18,32 @@ def get_db():
 
 def init_db():
     conn = get_db()
+    # companies table me logo column add kiya
     conn.execute('''CREATE TABLE IF NOT EXISTS companies (
-        id INTEGER PRIMARY KEY, company_name TEXT, gst_no TEXT, 
-        email TEXT UNIQUE, phone TEXT, password TEXT, 
+        id INTEGER PRIMARY KEY, company_name TEXT, gst_no TEXT,
+        email TEXT UNIQUE, phone TEXT, password TEXT, logo TEXT,
         registered_on TEXT, plan_expiry TEXT)''')
     conn.execute('''CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY, company_id INTEGER, title TEXT, 
-        location TEXT, salary TEXT, experience TEXT, 
+        id INTEGER PRIMARY KEY, company_id INTEGER, title TEXT,
+        location TEXT, salary TEXT, experience TEXT,
         description TEXT, contact TEXT, posted_on TEXT)''')
     conn.commit()
     conn.close()
 
 init_db()
 
-# Homepage with SEARCH 🔥
 @app.route('/')
 def home():
     search = request.args.get('search', '')
     conn = get_db()
     if search:
-        jobs = conn.execute('''SELECT j.*, c.company_name FROM jobs j 
-            JOIN companies c ON j.company_id = c.id 
-            WHERE j.title LIKE ? OR j.location LIKE ? OR c.company_name LIKE ?
+        jobs = conn.execute('''SELECT j.*, c.company_name, c.logo FROM jobs j
+            JOIN companies c ON j.company_id = c.id
+            WHERE j.title LIKE? OR j.location LIKE? OR c.company_name LIKE?
             ORDER BY j.id DESC''', (f'%{search}%', f'%{search}%', f'%{search}%')).fetchall()
     else:
-        jobs = conn.execute('''SELECT j.*, c.company_name FROM jobs j 
-            JOIN companies c ON j.company_id = c.id 
+        jobs = conn.execute('''SELECT j.*, c.company_name, c.logo FROM jobs j
+            JOIN companies c ON j.company_id = c.id
             ORDER BY j.id DESC''').fetchall()
     conn.close()
     return render_template_string(HOME_HTML, jobs=jobs, search=search)
@@ -55,7 +60,9 @@ body{font-family:Arial;margin:0;background:#f5f5f5}
 .search-box input{width:60%;padding:12px;border:2px solid #ff6b35;border-radius:5px;font-size:16px}
 .search-box button{padding:12px 20px;background:#ff6b35;color:white;border:none;border-radius:5px;font-weight:bold}
 .container{max-width:800px;margin:20px auto;padding:0 15px}
-.job-card{background:white;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.job-card{background:white;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);display:flex;gap:15px}
+.company-logo{width:60px;height:60px;border-radius:8px;object-fit:cover;border:2px solid #eee}
+.job-content{flex:1}
 .job-title{color:#ff6b35;font-size:22px;margin:0 0 10px 0}
 .job-meta{color:#666;margin:5px 0}
 .btn{display:inline-block;padding:10px 20px;margin:10px 10px 0 0;border-radius:5px;text-decoration:none;font-weight:bold}
@@ -81,6 +88,12 @@ body{font-family:Arial;margin:0;background:#f5f5f5}
 {% if jobs %}
 {% for job in jobs %}
 <div class="job-card">
+{% if job['logo'] %}
+<img src="{{job['logo']}}" class="company-logo" alt="Logo">
+{% else %}
+<div class="company-logo" style="background:#ff6b35;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:24px">{{job['company_name'][0]}}</div>
+{% endif %}
+<div class="job-content">
 <h3 class="job-title">{{job['title']}}</h3>
 <p><b>Company:</b> {{job['company_name']}}</p>
 <p class="job-meta">📍 Location: {{job['location']}} | 💰 Salary: {{job['salary']}}</p>
@@ -88,6 +101,7 @@ body{font-family:Arial;margin:0;background:#f5f5f5}
 <p class="job-meta">📅 Posted: {{job['posted_on']}}</p>
 <a href="tel:{{job['contact']}}" class="btn call-btn">📞 Call Now</a>
 <a href="https://wa.me/91{{job['contact']}}?text=Hi, I am interested in {{job['title']}} job posted on Surejob" class="btn wa-btn">💬 WhatsApp Apply</a>
+</div>
 </div>
 {% endfor %}
 {% else %}
@@ -100,23 +114,31 @@ body{font-family:Arial;margin:0;background:#f5f5f5}
 def register():
     if request.method == 'POST':
         data = request.form
+        logo = request.files['logo']
+        logo_path = ''
+        if logo and logo.filename!= '':
+            filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{logo.filename}"
+            logo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            logo_path = f"/static/logos/{filename}"
+
         conn = get_db()
         try:
             reg_date = datetime.now()
             expiry = reg_date + timedelta(days=60)
-            conn.execute('INSERT INTO companies (company_name,gst_no,email,phone,password,registered_on,plan_expiry) VALUES (?,?,?,?,?,?,?)',
-                (data['company_name'],data['gst_no'],data['email'],data['phone'],data['password'],reg_date.strftime('%d %b %Y'),expiry.strftime('%d %b %Y')))
+            conn.execute('INSERT INTO companies (company_name,gst_no,email,phone,password,logo,registered_on,plan_expiry) VALUES (?,?,?,?,?,?,?,?)',
+                (data['company_name'],data['gst_no'],data['email'],data['phone'],data['password'],logo_path,reg_date.strftime('%d %b %Y'),expiry.strftime('%d %b %Y')))
             conn.commit()
             return "Company Registered! 60 Din FREE Start 🔥 <a href='/login'>Login Karo</a>"
         except: return "Email already registered"
         finally: conn.close()
     return render_template_string('''<h2>Company Register - 60 Din FREE</h2>
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
 Company Name: <input name="company_name" required><br><br>
 GST No: <input name="gst_no" required><br><br>
 Email: <input type="email" name="email" required><br><br>
 Phone: <input name="phone" required><br><br>
 Password: <input type="password" name="password" required><br><br>
+Company Logo: <input type="file" name="logo" accept="image/*"><br><br>
 <button>Register FREE</button></form>''')
 
 @app.route('/login', methods=['GET','POST'])
@@ -146,11 +168,14 @@ def dashboard():
     conn.close()
     return render_template_string('''
 <h2>Dashboard - Welcome {{company['company_name']}}</h2>
+{% if company['logo'] %}
+<img src="{{company['logo']}}" style="width:80px;height:80px;border-radius:10px;">
+{% endif %}
 <p>60 Din FREE Plan Active | Expiry: {{company['plan_expiry']}}</p>
 <a href="/post-job"><button>+ Nayi Job Post Karo</button></a>
 <h3>Aapki Posted Jobs: {{jobs|length}}</h3>
 {% for job in jobs %}
-<p>{{job['title']}} - {{job['location']}} | Posted: {{job['posted_on']}} 
+<p>{{job['title']}} - {{job['location']}} | Posted: {{job['posted_on']}}
 <a href="/delete-job/{{job['id']}}" style="color:red;margin-left:10px;" onclick="return confirm('Job delete karni hai?')">❌ Delete</a>
 </p>
 {% endfor %}
