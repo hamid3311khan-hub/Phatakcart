@@ -75,24 +75,25 @@ BASE_HTML = """
       {% endif %}
     {% endwith %}
 </div>
-{{ content|safe }}
-<footer class="footer">
-    <div class="container text-center">
-        <p class="mb-1">© 2026 Surejob - India's Trusted Job Portal</p>
-        <small>Find Jobs | Post Jobs | Hire Talent</small>
-    </div>
-</footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-"""
+    job_cards = ""
+    for job in jobs:
+        logo = f'<img src="/{job["logo"]}" width="60" height="60" class="rounded border">' if job["logo"] else '<div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="fas fa-building fa-2x"></i></div>'
+        skills = job["skills"].split(',')[:3] if job["skills"] else []
+        skill_badges = ''.join([f'<span class="badge badge-skill">{s.strip()}</span>' for s in skills])
 
-@app.route('/')
-def home():
-    conn = get_db()
-    search = request.args.get('search', '')
-    location = request.args.get('location', '')
-    category = request.args.get('category', '')
+        job_cards += '<div class="col-lg-6 mb-4"><div class="card job-card h-100"><div class="card-body">'
+        job_cards += '<div class="d-flex mb-3">' + logo + '<div class="ms-3 flex-grow-1">'
+        job_cards += f'<h5 class="card-title mb-1">{job["title"]}</h5>'
+        job_cards += f'<p class="text-muted mb-0"><i class="fas fa-building"></i> {job["company_name"]}</p></div>'
+        job_cards += '<span class="badge bg-success">Active</span></div>'
+        job_cards += f'<div class="mb-2"><span class="me-3"><i class="fas fa-map-marker-alt text-danger"></i> {job["location"]}</span>'
+        job_cards += f'<span class="me-3"><i class="fas fa-rupee-sign text-success"></i> {job["salary"]}</span>'
+        job_cards += f'<span><i class="fas fa-briefcase text-info"></i> {job["experience"]}</span></div>'
+        job_cards += f'<div class="mb-3">{skill_badges}</div>'
+        job_cards += f'<div class="d-flex justify-content-between align-items-center"><span class="badge bg-primary">{job["category"]}</span>'
+        job_cards += f'<a href="/job/{job["id"]}" class="btn btn-primary btn-sm">View & Apply <i class="fas fa-arrow-right"></i></a></div>'
+        job_cards += '</div></div></div>'
+
 
     query = 'SELECT j.*, c.company_name, c.logo FROM jobs j JOIN companies c ON j.company_id = c.id WHERE j.status="Active"'
     params = []
