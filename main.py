@@ -30,3 +30,6 @@ def init_db():
     conn.execute('''CREATE TABLE IF NOT EXISTS companies (id INTEGER PRIMARY KEY, company_name TEXT, gst_no TEXT, email TEXT UNIQUE, phone TEXT, password TEXT, logo TEXT, registered_on TEXT, plan_expiry TEXT)''')
     conn.execute('''CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, company_id INTEGER, title TEXT, location TEXT, salary TEXT, experience TEXT, category TEXT, description TEXT, contact TEXT, posted_on TEXT)''')
     conn.execute
+@app.route('/')
+def home():
+    return "Surejob Live Ho Gaya Bhai! 🎉"
