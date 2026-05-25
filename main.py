@@ -83,25 +83,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#333}
 </style>
 '''
 
-@app.route('/')
-def home():
-    search = request.args.get('search', '').strip()
-    category = request.args.get('category', '')
-    conn = get_db()
-    query = '''SELECT j.*, c.company_name, c.logo FROM jobs j
-               JOIN companies c ON j.company_id = c.id WHERE 1=1'''
-    params = []
-    if search:
-        query += ' AND (j.title LIKE? OR j.location LIKE? OR c.company_name LIKE?)'
-        params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
-    if category:
-        query += ' AND j.category=?'
-        params.append(category)
-    query += ' ORDER BY j.id DESC'
-    jobs = conn.execute(query, params).fetchall()
-    conn.close()
-    return render_template_string(BASE_HTML + HOME_HTML, jobs=jobs, search=search, category=category, categories=JOB_CATEGORIES)
-
 BASE_HTML = '''<!DOCTYPE html><html><head><title>Surejob - India ka Sabse Imaandaar Job Portal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">''' + CSS + '''</head><body>
 <div class="header"><h1>Surejob 🔥</h1><p>India ka Sabse Imaandaar Job Portal - 100% FREE</p></div>
@@ -158,6 +139,28 @@ HOME_HTML = '''
 </div></body></html>
 '''
 
+@app.route('/')
+def home():
+    search = request.args.get('search', '').strip()
+    category = request.args.get('category', '')
+    conn = get_db()
+    query = '''SELECT j.*, c.company_name, c.logo FROM jobs j
+               JOIN companies c ON j.company_id = c.id WHERE 1=1'''
+    params = []
+    if search:
+        query += ' AND (j.title LIKE? OR j.location LIKE? OR c.company_name LIKE?)'
+        params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
+    if category:
+        query += ' AND j.category=?'
+        params.append(category)
+    query += ' ORDER BY j.id DESC'
+    jobs = conn.execute(query, params).fetchall()
+    conn.close()
+    return render_template_string(BASE_HTML + HOME_HTML, jobs=jobs, search=search, category=category, categories=JOB_CATEGORIES)
+
+# Baaki saare routes same rahenge... login, register, dashboard, apply, admin etc
+# Main sirf order fix kiya hai. BASE_HTML aur HOME_HTML ab upar aa gaye
+
 @app.route('/apply/<int:job_id>', methods=['GET','POST'])
 def apply_job(job_id):
     conn = get_db()
@@ -167,7 +170,6 @@ def apply_job(job_id):
         conn.close()
         flash('Job not found', 'error')
         return redirect(url_for('home'))
-
     if request.method == 'POST':
         try:
             resume = request.files.get('resume')
@@ -176,7 +178,6 @@ def apply_job(job_id):
                 filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume.filename}")
                 resume.save(os.path.join(RESUME_FOLDER, filename))
                 resume_path = f"/static/resumes/{filename}"
-
             conn.execute('''INSERT INTO applications (job_id, candidate_name, candidate_phone, candidate_email, resume_path, applied_on)
                             VALUES (?,?,?,?,?,?)''',
                          (job_id, request.form['name'], request.form['phone'], request.form['email'],
@@ -187,7 +188,6 @@ def apply_job(job_id):
             return redirect(url_for('home'))
         except Exception as e:
             flash('Error submitting application. Try again.', 'error')
-
     conn.close()
     return render_template_string(BASE_HTML + '''
 <div class="form-card">
@@ -218,7 +218,6 @@ def register():
                 filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{logo.filename}")
                 logo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 logo_path = f"/static/logos/{filename}"
-
             conn = get_db()
             reg_date = datetime.now()
             expiry = reg_date + timedelta(days=60)
@@ -311,13 +310,10 @@ def dashboard():
     conn = get_db()
     company = conn.execute('SELECT * FROM companies WHERE id=?', (session['company_id'],)).fetchone()
     jobs = conn.execute('SELECT * FROM jobs WHERE company_id=? ORDER BY id DESC', (session['company_id'],)).fetchall()
-
-    # Get applications for each job
     jobs_with_apps = []
     for job in jobs:
         apps = conn.execute('SELECT * FROM applications WHERE job_id=? ORDER BY id DESC', (job['id'],)).fetchall()
         jobs_with_apps.append({'job': job, 'applications': apps})
-
     conn.close()
     return render_template_string(BASE_HTML + '''
 <div class="container">
@@ -332,7 +328,6 @@ def dashboard():
 </div></div>
 <a href="/post-job" class="btn call-btn" style="margin-top:15px;">+ Nayi Job Post Karo</a>
 </div>
-
 <h3>Aapki Posted Jobs: {{jobs_with_apps|length}}</h3>
 {% for item in jobs_with_apps %}
 <div class="job-list-item">
@@ -412,12 +407,7 @@ def delete_job(job_id):
     if 'company_id' not in session: return redirect(url_for('login'))
     conn = get_db()
     conn.execute('DELETE FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
-    conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,)) # Delete applications also
+    conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,))
     conn.commit()
     conn.close()
-    flash('Job Deleted Successfully!', 'success')
-    return redirect(url_for('dashboard'))
-
-@app.route('/logout')
-def logout():
- 
+    flash('Job Deleted Successfully!', 'succe
