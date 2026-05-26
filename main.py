@@ -149,16 +149,16 @@ def company_login():
             return redirect('/company-dashboard')
         flash('Invalid credentials!')
     return render_template('company_login.html')
-
 @app.route('/company-dashboard')
 def company_dashboard():
     if 'company_id' not in session:
         return redirect('/company-login')
     conn = get_db()
+    company = conn.execute('SELECT * FROM companies WHERE id=?', (session['company_id'],)).fetchone()  # ← Ye line add ki
     jobs = conn.execute('SELECT * FROM jobs WHERE company_id=? ORDER BY id DESC', (session['company_id'],)).fetchall()
     apps = conn.execute('SELECT a.*, j.title FROM applications a JOIN jobs j ON a.job_id = j.id WHERE j.company_id=? ORDER BY a.id DESC LIMIT 10', (session['company_id'],)).fetchall()
     conn.close()
-    return render_template('company_dashboard.html', jobs=jobs, apps=apps)
+    return render_template('company_dashboard.html', jobs=jobs, apps=apps, company=company)
 
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
