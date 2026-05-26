@@ -203,7 +203,11 @@ def admin():
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('.', filename)
-
+@app.route('/company-logout')
+def company_logout():
+    session.pop('company_id', None)
+    session.pop('company_name', None)
+    return redirect('/')
 @app.route('/logout')
 def logout():
     session.clear()
