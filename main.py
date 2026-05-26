@@ -66,14 +66,24 @@ def job_detail(job_id):
         conn.close()
         return "Job Not Found", 404
     if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        
+        if not all([name, email, phone]):
+            flash('Name, Email aur Phone required hai!')
+            conn.close()
+            return redirect(f'/job/{job_id}')
+            
         resume = request.files.get('resume')
         resume_path = ''
-        if resume and allowed_file(resume.filename):
+        if resume and resume.filename and allowed_file(resume.filename):
             filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume.filename}")
             resume_path = os.path.join(RESUME_FOLDER, filename)
             resume.save(resume_path)
+            
         conn.execute('INSERT INTO applications (job_id, name, email, phone, resume, cover_letter, applied_on) VALUES (?,?,?,?,?,?,?)',
-            (job_id, request.form['name'], request.form['email'], request.form['phone'], resume_path, request.form.get('cover_letter',''), datetime.now().strftime('%Y-%m-%d %H:%M')))
+            (job_id, name, email, phone, resume_path, request.form.get('cover_letter',''), datetime.now().strftime('%Y-%m-%d %H:%M')))
         conn.commit()
         flash('Application submitted successfully!')
         conn.close()
@@ -84,32 +94,54 @@ def job_detail(job_id):
 @app.route('/company-register', methods=['GET', 'POST'])
 def company_register():
     if request.method == 'POST':
+        company_name = request.form.get('company_name', '').strip()
+        gst_no = request.form.get('gst_no', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not all([company_name, email, phone, password]):
+            flash('Company Name, Email, Phone aur Password required hai!')
+            return render_template('company_register.html')
+        
         logo = request.files.get('logo')
         logo_path = ''
-        if logo and allowed_file(logo.filename):
+        if logo and logo.filename and allowed_file(logo.filename):
             filename = secure_filename(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{logo.filename}")
             logo_path = os.path.join(UPLOAD_FOLDER, filename)
             logo.save(logo_path)
+        
         conn = get_db()
         try:
             conn.execute('INSERT INTO companies (company_name, gst_no, email, phone, password, logo, registered_on, plan_expiry) VALUES (?,?,?,?,?,?,?,?)',
-                (request.form['company_name'], request.form['gst_no'], request.form['email'], request.form['phone'],
-                 request.form['password'], logo_path, datetime.now().strftime('%Y-%m-%d'), (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')))
+                (company_name, gst_no, email, phone, password, logo_path, 
+                 datetime.now().strftime('%Y-%m-%d'), 
+                 (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')))
             conn.commit()
             flash('Registration successful! Please login.')
+            conn.close()
             return redirect('/company-login')
         except sqlite3.IntegrityError:
-            flash('Email already registered!')
-        finally:
             conn.close()
+            flash('Ye Email already registered hai! Dusra email use karo.')
+        except Exception as e:
+            conn.close()
+            flash(f'Kuch error aa gaya: {str(e)}')
+    
     return render_template('company_register.html')
 
 @app.route('/company-login', methods=['GET', 'POST'])
 def company_login():
     if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not email or not password:
+            flash('Email aur Password dono dalo!')
+            return render_template('company_login.html')
+            
         conn = get_db()
-        company = conn.execute('SELECT * FROM companies WHERE email=? AND password=?',
-            (request.form['email'], request.form['password'])).fetchone()
+        company = conn.execute('SELECT * FROM companies WHERE email=? AND password=?', (email, password)).fetchone()
         conn.close()
         if company:
             session['company_id'] = company['id']
@@ -133,11 +165,19 @@ def post_job():
     if 'company_id' not in session:
         return redirect('/company-login')
     if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        location = request.form.get('location', '').strip()
+        category = request.form.get('category', '').strip()
+        
+        if not all([title, location, category]):
+            flash('Title, Location aur Category required hai!')
+            return render_template('post_job.html', categories=JOB_CATEGORIES, locations=LOCATIONS)
+            
         conn = get_db()
         conn.execute('INSERT INTO jobs (company_id, title, location, salary, experience, category, description, skills, contact, posted_on) VALUES (?,?,?,?,?,?,?,?,?,?)',
-            (session['company_id'], request.form['title'], request.form['location'], request.form['salary'],
-             request.form['experience'], request.form['category'], request.form['description'], request.form['skills'],
-             request.form['contact'], datetime.now().strftime('%Y-%m-%d')))
+            (session['company_id'], title, location, request.form.get('salary',''),
+             request.form.get('experience',''), category, request.form.get('description',''), 
+             request.form.get('skills',''), request.form.get('contact',''), datetime.now().strftime('%Y-%m-%d')))
         conn.commit()
         conn.close()
         flash('Job posted successfully!')
@@ -147,7 +187,7 @@ def post_job():
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
-        if request.form['password'] == ADMIN_PASSWORD:
+        if request.form.get('password') == ADMIN_PASSWORD:
             session['admin'] = True
             return redirect('/admin')
         flash('Wrong Password!')
@@ -169,5 +209,5 @@ def logout():
     session.clear()
     return redirect('/')
 
-#if __name__ == '__main__':
-#    app.run(debug=False)
+# if __name__ == '__main__':
+# app.run(debug=False)
