@@ -212,6 +212,32 @@ def company_logout():
 def logout():
     session.clear()
     return redirect('/')
+    @app.route('/post-job', methods=['GET', 'POST'])
+def post_job():
+    if 'company_id' not in session:
+        return redirect('/company-login')
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        salary = request.form.get('salary', '').strip()
+        location = request.form.get('location', '').strip()
+        category = request.form.get('category', '').strip()
+        
+        if not title or not salary or not location:
+            flash('Title, Salary aur Location zaroori hai!')
+            return render_template('post_job.html')
+            
+        conn = get_db()
+        conn.execute('''INSERT INTO jobs (title, description, salary, location, category, company_id) 
+                        VALUES (?, ?, ?, ?, ?, ?)''', 
+                     (title, description, salary, location, category, session['company_id']))
+        conn.commit()
+        conn.close()
+        flash('Job successfully posted!')
+        return redirect('/company-dashboard')
+        
+    return render_template('post_job.html')
 
 # if __name__ == '__main__':
 # app.run(debug=False)
