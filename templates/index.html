@@ -23,7 +23,7 @@
     <div class="row">
         {% for job in jobs %}
         <div class="col-lg-6 mb-4">
-            <a href="{{ url_for('job_detail', id=job.id) }}" style="text-decoration: none; color: inherit;">
+            <a href="{{ url_for('job_detail', job_id=job.id) }}" style="text-decoration: none; color: inherit;">
                 <div class="card job-card h-100">
                     <div class="card-body">
                         <div class="d-flex mb-3">
