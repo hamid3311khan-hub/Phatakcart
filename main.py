@@ -38,28 +38,38 @@ init_db()
 
 @app.route('/')
 def home():
-    conn = get_db()
-    search = request.args.get('search', '')
-    location = request.args.get('location', '')
-    category = request.args.get('category', '')
+    try:
+        conn = get_db()
+        search = request.args.get('search', '')
+        location = request.args.get('location', '')
+        category = request.args.get('category', '')
+        
+        query = '''
+            SELECT j.id, j.title, j.description, j.salary, j.location, j.category,
+                   c.company_name, c.logo 
+            FROM jobs j 
+            LEFT JOIN companies c ON j.company_id = c.id 
+            WHERE 1=1
+        '''
+        params = []
+        if search:
+            query += ' AND j.title LIKE ?'
+            params.append(f'%{search}%')
+        if location:
+            query += ' AND j.location = ?'
+            params.append(location)
+        if category:
+            query += ' AND j.category = ?'
+            params.append(category)
+        query += ' ORDER BY j.id DESC LIMIT 50'
+        
+        jobs = conn.execute(query, params).fetchall()
+        conn.close()
+        return render_template('index.html', jobs=jobs, locations=LOCATIONS, categories=JOB_CATEGORIES, search=search, location=location, category=category)
     
-    # JOIN hata diya, direct jobs table se utha rahe
-    query = 'SELECT * FROM jobs WHERE 1=1'
-    params = []
-    if search:
-        query += ' AND title LIKE?'
-        params.append(f'%{search}%')
-    if location:
-        query += ' AND location=?'
-        params.append(location)
-    if category:
-        query += ' AND category=?'
-        params.append(category)
-    query += ' ORDER BY id DESC LIMIT 50'
-    
-    jobs = conn.execute(query, params).fetchall()
-    conn.close()
-    return render_template('index.html', jobs=jobs, locations=LOCATIONS, categories=JOB_CATEGORIES, search=search, location=location, category=category)
+    except Exception as e:
+        print(f"Homepage Error: {e}")
+        return f"Error: {e}", 500
     
 @app.route('/job/<int:job_id>', methods=['GET', 'POST'])
 def job_detail(job_id):
