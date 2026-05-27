@@ -42,7 +42,7 @@ def home():
     search = request.args.get('search', '')
     location = request.args.get('location', '')
     category = request.args.get('category', '')
-    query = 'SELECT j.*, c.company_name, c.logo FROM jobs j JOIN companies c ON j.company_id = c.id WHERE j.status="Active"'
+    query = 'SELECT j.*, c.company_name, c.logo FROM jobs j JOIN companies c ON j.company_id = c.id WHERE 1=1
     params = []
     if search:
         query += ' AND j.title LIKE?'
