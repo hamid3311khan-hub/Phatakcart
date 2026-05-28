@@ -32,6 +32,9 @@
                         <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
                             View
                         </a>
+                        <a href="/edit-job/{{ job.id }}" class="btn btn-sm btn-warning ms-2">
+    Edit
+                        </a>
                         <a href="/delete-job/{{ job.id }}" class="btn btn-sm btn-danger ms-2" 
                            onclick="return confirm('Pakka delete karna hai?')">
                            Delete
