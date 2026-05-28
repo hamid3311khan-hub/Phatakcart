@@ -40,28 +40,37 @@ init_db()
 def home():
     try:
         conn = get_db()
-        search = request.args.get('search', '')
-        location = request.args.get('location', '')
-        category = request.args.get('category', '')
+        search = request.args.get('q', '').strip()
+        location = request.args.get('location', 'All Locations')
+        category = request.args.get('category', 'All Categories')
 
         query = '''
             SELECT j.id, j.title, j.description, j.salary, j.location, j.category, j.skills,
                    c.company_name, c.logo
             FROM jobs j
             LEFT JOIN companies c ON j.company_id = c.id
-            WHERE 1=1
+            WHERE j.status = 'Active'
         '''
         params = []
+
         if search:
-            query += ' AND j.title LIKE?'
-            params.append(f'%{search}%')
-        if location:
+            query += ''' AND (
+                j.title LIKE? OR
+                j.description LIKE? OR
+                j.skills LIKE? OR
+                c.company_name LIKE?
+            )'''
+            like_search = f'%{search}%'
+            params.extend([like_search, like_search, like_search, like_search])
+
+        if location and location!= 'All Locations':
             query += ' AND j.location =?'
             params.append(location)
-        if category:
-            query += ' AND LOWER(j.category) = LOWER(?)'
+
+        if category and category!= 'All Categories':
+            query += ' AND j.category =?'
             params.append(category)
-    
+
         query += ' ORDER BY j.id DESC LIMIT 50'
 
         jobs = conn.execute(query, params).fetchall()
@@ -191,19 +200,20 @@ def delete_job(job_id):
     conn.close()
     flash('Job deleted successfully!')
     return redirect('/company-dashboard')
+
 @app.route('/edit-job/<int:job_id>', methods=['GET', 'POST'])
 def edit_job(job_id):
     if 'company_id' not in session:
         return redirect('/company-login')
-    
+
     conn = get_db()
     job = conn.execute('SELECT * FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id'])).fetchone()
-    
+
     if not job:
         conn.close()
         flash('Job not found!')
         return redirect('/company-dashboard')
-    
+
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
@@ -213,20 +223,20 @@ def edit_job(job_id):
         experience = request.form.get('experience', '').strip()
         skills = request.form.get('skills', '').strip()
         contact = request.form.get('contact', '').strip()
-        
+
         if not all([title, salary, location, category]):
             flash('Title, Salary, Location aur Category required hai!')
             conn.close()
             return render_template('edit_job.html', job=job, categories=JOB_CATEGORIES, locations=LOCATIONS)
-        
-        conn.execute('''UPDATE jobs SET title=?, description=?, salary=?, location=?, 
+
+        conn.execute('''UPDATE jobs SET title=?, description=?, salary=?, location=?,
                         category=?, experience=?, skills=?, contact=? WHERE id=?''',
                     (title, description, salary, location, category, experience, skills, contact, job_id))
         conn.commit()
         conn.close()
         flash('Job updated successfully!')
         return redirect('/company-dashboard')
-    
+
     conn.close()
     return render_template('edit_job.html', job=job, categories=JOB_CATEGORIES, locations=LOCATIONS)
 
@@ -234,26 +244,24 @@ def edit_job(job_id):
 def job_applications(job_id):
     if 'company_id' not in session:
         return redirect('/company-login')
-    
+
     conn = get_db()
-    # Security: Check ye job isi company ki hai
     job = conn.execute('SELECT * FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id'])).fetchone()
-    
+
     if not job:
         conn.close()
         flash('Job not found!')
         return redirect('/company-dashboard')
-    
-    # Is job pe saari applications nikalo
+
     applications = conn.execute('''
-        SELECT * FROM applications 
-        WHERE job_id=? 
+        SELECT * FROM applications
+        WHERE job_id=?
         ORDER BY id DESC
     ''', (job_id,)).fetchall()
-    
+
     conn.close()
     return render_template('job_applications.html', job=job, applications=applications)
-    
+
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
     if 'company_id' not in session:
@@ -321,24 +329,20 @@ def company_logout():
 def logout():
     session.clear()
     return redirect('/')
+
 @app.route('/fix-job-once')
 def fix_job_once():
     try:
         conn = get_db()
-        # Mumbai wali job ko fix karo - yahi pe applications hain
         conn.execute("UPDATE jobs SET company_id=1, category='IT Software' WHERE location='Mumbai' AND title='Software developer'")
-        # Delhi wali ko bhi theek kar do
         conn.execute("UPDATE jobs SET company_id=1 WHERE location='Delhi' AND title='Software developer'")
         conn.commit()
-        
+
         jobs = conn.execute("SELECT id, title, company_id, category, location FROM jobs").fetchall()
         conn.close()
         return f"Fixed! Updated jobs: {jobs}"
     except Exception as e:
         return f"Error: {e}"
-
-# if __name__ == '__main__':
-# app.run(debug=False)
 
 # if __name__ == '__main__':
 # app.run(debug=False)
