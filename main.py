@@ -229,6 +229,30 @@ def edit_job(job_id):
     
     conn.close()
     return render_template('edit_job.html', job=job, categories=JOB_CATEGORIES, locations=LOCATIONS)
+
+@app.route('/job-applications/<int:job_id>')
+def job_applications(job_id):
+    if 'company_id' not in session:
+        return redirect('/company-login')
+    
+    conn = get_db()
+    # Security: Check ye job isi company ki hai
+    job = conn.execute('SELECT * FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id'])).fetchone()
+    
+    if not job:
+        conn.close()
+        flash('Job not found!')
+        return redirect('/company-dashboard')
+    
+    # Is job pe saari applications nikalo
+    applications = conn.execute('''
+        SELECT * FROM applications 
+        WHERE job_id=? 
+        ORDER BY id DESC
+    ''', (job_id,)).fetchall()
+    
+    conn.close()
+    return render_template('job_applications.html', job=job, applications=applications)
     
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
