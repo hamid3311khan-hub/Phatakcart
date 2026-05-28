@@ -16,7 +16,7 @@ os.makedirs(RESUME_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx'}
 JOB_CATEGORIES = ['Sales', 'Marketing', 'IT Software', 'HR', 'Finance', 'Operations', 'BPO', 'Customer Support', 'Engineering', 'Admin', 'Other']
 LOCATIONS = ['Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Pune', 'Chennai', 'Kolkata', 'Noida', 'Gurgaon', 'Remote']
-ADMIN_PASSWORD = 'surejob@admin123'
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -43,34 +43,34 @@ def home():
         search = request.args.get('search', '')
         location = request.args.get('location', '')
         category = request.args.get('category', '')
-        
+
         query = '''
             SELECT j.id, j.title, j.description, j.salary, j.location, j.category, j.skills,
-                   c.company_name, c.logo 
-            FROM jobs j 
-            LEFT JOIN companies c ON j.company_id = c.id 
+                   c.company_name, c.logo
+            FROM jobs j
+            LEFT JOIN companies c ON j.company_id = c.id
             WHERE 1=1
         '''
         params = []
         if search:
-            query += ' AND j.title LIKE ?'
+            query += ' AND j.title LIKE?'
             params.append(f'%{search}%')
         if location:
-            query += ' AND j.location = ?'
+            query += ' AND j.location =?'
             params.append(location)
         if category:
-            query += ' AND j.category = ?'
+            query += ' AND j.category =?'
             params.append(category)
         query += ' ORDER BY j.id DESC LIMIT 50'
-        
+
         jobs = conn.execute(query, params).fetchall()
         conn.close()
         return render_template('index.html', jobs=jobs, locations=LOCATIONS, categories=JOB_CATEGORIES, search=search, location=location, category=category)
-    
+
     except Exception as e:
         print(f"Homepage Error: {e}")
         return f"Error: {e}", 500
-    
+
 @app.route('/job/<int:job_id>', methods=['GET', 'POST'])
 def job_detail(job_id):
     conn = get_db()
