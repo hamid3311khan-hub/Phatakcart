@@ -179,6 +179,17 @@ def company_dashboard():
     conn.close()
     return render_template('company_dashboard.html', jobs=jobs, apps=apps, company=company)
 
+@app.route('/delete-job/<int:job_id>')
+def delete_job(job_id):
+    if 'company_id' not in session:
+        return redirect('/company-login')
+    conn = get_db()
+    conn.execute('DELETE FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
+    conn.commit()
+    conn.close()
+    flash('Job deleted successfully!')
+    return redirect('/company-dashboard')
+
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
     if 'company_id' not in session:
