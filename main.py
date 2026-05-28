@@ -255,6 +255,15 @@ def company_logout():
 def logout():
     session.clear()
     return redirect('/')
-
+@app.route('/delete-job/<int:job_id>')
+def delete_job(job_id):
+    if 'company_id' not in session:
+        return redirect('/company-login')
+    conn = get_db()
+    conn.execute('DELETE FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
+    conn.commit()
+    conn.close()
+    flash('Job deleted successfully!')
+    return redirect('/company-dashboard')
 # if __name__ == '__main__':
 # app.run(debug=False)
