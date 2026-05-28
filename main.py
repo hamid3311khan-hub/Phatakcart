@@ -321,6 +321,24 @@ def company_logout():
 def logout():
     session.clear()
     return redirect('/')
+@app.route('/fix-job-once')
+def fix_job_once():
+    try:
+        conn = get_db()
+        # Mumbai wali job ko fix karo - yahi pe applications hain
+        conn.execute("UPDATE jobs SET company_id=1, category='IT Software' WHERE location='Mumbai' AND title='Software developer'")
+        # Delhi wali ko bhi theek kar do
+        conn.execute("UPDATE jobs SET company_id=1 WHERE location='Delhi' AND title='Software developer'")
+        conn.commit()
+        
+        jobs = conn.execute("SELECT id, title, company_id, category, location FROM jobs").fetchall()
+        conn.close()
+        return f"Fixed! Updated jobs: {jobs}"
+    except Exception as e:
+        return f"Error: {e}"
+
+# if __name__ == '__main__':
+# app.run(debug=False)
 
 # if __name__ == '__main__':
 # app.run(debug=False)
