@@ -371,21 +371,29 @@ def job_applications(job_id):
     return render_template('job_applications.html', job=job, applications=applications)
 
 @app.route('/admin', methods=['GET', 'POST'])
+
+@app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
-        if request.form.get('password') == ADMIN_PASSWORD:
+        if request.form.get('password') == os.environ.get('ADMIN_PASSWORD', 'admin123'):
             session['admin'] = True
-            return redirect('/admin')
-        flash('Wrong Password!', 'error')
+        else:
+            return render_template('admin_login.html', error='Invalid password')
+    
     if not session.get('admin'):
         return render_template('admin_login.html')
+    
     conn = get_db()
     companies = conn.execute('SELECT * FROM companies ORDER BY id DESC').fetchall()
-    jobs = conn.execute('SELECT j.*, c.company_name FROM jobs j JOIN companies c ON j.company_id = c.id ORDER BY j.id DESC').fetchall()
-    apps_count = conn.execute('SELECT COUNT(*) as total FROM applications').fetchone()['total']
+    jobs = conn.execute('SELECT jobs.*, companies.company_name FROM jobs JOIN companies ON jobs.company_id = companies.id ORDER BY jobs.id DESC').fetchall()
+    
+    # YEH LINE ADD KAR 👇
+    apps_count = conn.execute('SELECT COUNT(*) as count FROM applications').fetchone()['count']
+    
     conn.close()
+    
+    # YAHAN apps_count ADD KAR 👇
     return render_template('admin.html', companies=companies, jobs=jobs, apps_count=apps_count)
-
 @app.route('/toggle-featured/<int:job_id>')
 def toggle_featured(job_id):
     if not session.get('admin'):
