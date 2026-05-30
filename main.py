@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
@@ -191,32 +191,6 @@ def candidate_dashboard():
     conn.close()
     return render_template('candidate_dashboard.html', applications=applications)
 
-@app.route('/job-applications/<int:job_id>')
-def job_applications(job_id):
-    if 'company_id' not in session:
-        return redirect('/company-login')
-
-    conn = sqlite3.connect('surejob.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    # Check karo ki ye job is company ki hai ya nahi
-    c.execute('SELECT * FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
-    job = c.fetchone()
-    if not job:
-        conn.close()
-        return "Unauthorized", 403
-
-    # Is job pe jitne candidates ne apply kiya hai
-    c.execute('''SELECT a.*, c.name, c.email, c.phone, c.resume, c.applied_on
-                 FROM applications a
-                 JOIN candidates c ON a.candidate_id = c.id
-                 WHERE a.job_id=?
-                 ORDER BY a.applied_on DESC''', (job_id,))
-    applications = c.fetchall()
-    conn.close()
-    return render_template('job_applications.html', job=job, applications=applications)
-
 @app.route('/download-resume/<filename>')
 def download_resume(filename):
     return send_from_directory('static/uploads/resumes', filename)
@@ -285,11 +259,10 @@ def company_dashboard():
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
-    # Jobs ke saath application count bhi nikaal lo
-    c.execute('''SELECT j.*, 
-                 (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as app_count 
-                 FROM jobs j WHERE j.company_id = ? ORDER BY j.posted_on DESC''', 
+
+    c.execute('''SELECT j.*,
+                 (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as app_count
+                 FROM jobs j WHERE j.company_id =? ORDER BY j.posted_on DESC''',
                  (session['company_id'],))
     jobs = c.fetchall()
     conn.close()
@@ -329,35 +302,34 @@ def post_job():
         conn.close()
         return redirect('/company-dashboard')
     return render_template('post_job.html')
-    
+
 @app.route('/edit-job/<int:job_id>', methods=['GET', 'POST'])
 def edit_job(job_id):
     if 'company_id' not in session:
         return redirect('/company-login')
-    
+
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
     if request.method == 'POST':
         data = request.form
-        # .get() use kiya taaki missing field pe na fate
-        c.execute('''UPDATE jobs SET 
+        c.execute('''UPDATE jobs SET
                      title=?, job_type=?, experience=?, location=?,
-                     openings=?, salary=?, description=?, requirements=?, 
+                     openings=?, salary=?, description=?, requirements=?,
                      skills=?, perks=?
                      WHERE id=? AND company_id=?''',
-                 (data.get('title'), 
-                  data.get('job_type'), 
-                  data.get('experience'), 
+                 (data.get('title'),
+                  data.get('job_type'),
+                  data.get('experience'),
                   data.get('location'),
-                  data.get('openings'), 
-                  data.get('salary'), 
-                  data.get('description'), 
+                  data.get('openings'),
+                  data.get('salary'),
+                  data.get('description'),
                   data.get('requirements'),
-                  data.get('skills', ''), 
-                  data.get('perks', ''), 
-                  job_id, 
+                  data.get('skills', ''),
+                  data.get('perks', ''),
+                  job_id,
                   session['company_id']))
         conn.commit()
         conn.close()
@@ -377,9 +349,10 @@ def job_applications(job_id):
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT title FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
+    c.execute('SELECT * FROM jobs WHERE id=? AND company_id=?', (job_id, session['company_id']))
     job = c.fetchone()
     if not job:
+        conn.close()
         return "Job not found", 404
     c.execute('''SELECT a.*, c.name as candidate_name, c.email as candidate_email, c.phone as candidate_phone
                  FROM applications a
