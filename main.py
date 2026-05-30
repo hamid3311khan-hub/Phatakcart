@@ -425,3 +425,34 @@ def check_db():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
+@app.route('/update-status/<int:app_id>/<status>')
+def update_status(app_id, status):
+    if 'company_id' not in session:
+        return redirect('/company-login')
+    
+    if status not in ['Shortlisted', 'Interview', 'Rejected']:
+        flash('Invalid status!', 'error')
+        return redirect('/company-dashboard')
+    
+    conn = get_db()
+    # Security: check karo ye application isi company ki job ka hai
+    app_data = conn.execute('''
+        SELECT a.id, a.job_id, a.email, a.name, j.title, j.company_id 
+        FROM applications a 
+        JOIN jobs j ON a.job_id = j.id 
+        WHERE a.id = ? AND j.company_id = ?
+    ''', (app_id, session['company_id'])).fetchone()
+    
+    if not app_data:
+        conn.close()
+        flash('Application not found!', 'error')
+        return redirect('/company-dashboard')
+    
+    conn.execute('UPDATE applications SET status = ? WHERE id = ?', (status, app_id))
+    conn.commit()
+    conn.close()
+    
+    # Yaha email bhej sakte ho candidate ko - abhi ke liye skip
+    flash(f'{app_data["name"]} ko {status} mark kar diya!', 'success')
+    return redirect(f'/job-applications/{app_data["job_id"]}')
