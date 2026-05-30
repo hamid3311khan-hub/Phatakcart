@@ -1,494 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}SureJob - Find 5000+ Jobs from Top Companies{% endblock %}
+{% block title %}Find Jobs - SureJob{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Hero Section */
     .hero {
-        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
-        color: #fff; 
-        padding: 80px 5% 120px; 
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+        background:linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        padding:60px 5%; text-align:center; color:#fff;
     }
-    .hero::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.05" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,112C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
-        background-size: cover;
-    }
-    .hero-content {position: relative; z-index: 1;}
-    .hero h1 {font-size: 52px; font-weight: 800; margin-bottom: 16px; line-height: 1.2;}
-    .hero p {font-size: 20px; opacity: 0.9; margin-bottom: 40px;}
+    .hero h1 {font-size:42px; font-weight:800; margin-bottom:16px;}
+    .hero p {font-size:18px; opacity:0.95; margin-bottom:32px;}
     
-    /* Search Box */
-    .search-wrapper {max-width: 900px; margin: 0 auto;}
     .search-box {
-        background: #fff; 
-        padding: 12px; 
-        border-radius: 16px; 
-        display: grid;
-        grid-template-columns: 1fr 1fr auto;
-        gap: 12px; 
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        max-width:900px; margin:0 auto; background:#fff; padding:8px;
+        border-radius:12px; display:flex; gap:8px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);
     }
     .search-input {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 0 16px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-    }
-    .search-input i {color: var(--text-light); font-size: 18px;}
-    .search-input input, .search-input select {
-        flex: 1;
-        border: none;
-        padding: 16px 0;
-        font-size: 16px;
-        outline: none;
-        background: transparent;
+        flex:1; padding:16px 20px; border:none; outline:none; font-size:16px;
+        border-radius:8px;
     }
     .search-btn {
-        background: var(--primary);
-        color: #fff;
-        border: none;
-        padding: 16px 40px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
+        background:var(--primary); color:#fff; border:none; padding:16px 32px;
+        border-radius:8px; font-weight:700; cursor:pointer; font-size:16px;
     }
-    .search-btn:hover {background: var(--primary-dark); transform: scale(1.02);}
+    .search-btn:hover {background:var(--primary-dark);}
     
-    .filter-pills {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
+    .stats {
+        display:flex; justify-content:center; gap:48px; margin-top:40px;
+        flex-wrap:wrap;
     }
-    .pill {
-        background: rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        color: #fff;
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-size: 14px;
-        cursor: pointer;
-        border: 1px solid rgba(255,255,255,0.3);
-        transition: all 0.2s;
-    }
-    .pill:hover, .pill.active {background: rgba(255,255,255,0.3);}
+    .stat {text-align:center;}
+    .stat strong {display:block; font-size:32px; font-weight:800; margin-bottom:4px;}
+    .stat span {font-size:14px; opacity:0.9;}
     
-    /* Container */
-    .section {padding: 60px 5%;}
-    .section-title {
-        font-size: 32px; 
-        font-weight: 700; 
-        margin-bottom: 32px; 
-        text-align: center;
+    .container {max-width:1400px; margin:0 auto; padding:60px 5%;}
+    .section-title {font-size:32px; font-weight:800; margin-bottom:12px;}
+    .section-subtitle {color:var(--text-light); margin-bottom:40px; font-size:16px;}
+    
+    .filters {
+        background:#fff; padding:24px; border-radius:12px; border:1px solid var(--border);
+        margin-bottom:32px; display:flex; gap:12px; flex-wrap:wrap;
     }
-    .section-subtitle {
-        text-align: center;
-        color: var(--text-light);
-        margin-top: -20px;
-        margin-bottom: 40px;
+    .filter-select {
+        padding:12px 16px; border:2px solid var(--border); border-radius:8px;
+        font-size:14px; outline:none; min-width:180px;
     }
     
-    /* Categories */
-    .categories {
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-        gap: 20px; 
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    .cat-card {
-        background: var(--white); 
-        padding: 32px 20px; 
-        border-radius: 16px; 
-        text-align: center; 
-        box-shadow: var(--shadow); 
-        transition: all 0.3s; 
-        cursor: pointer; 
-        border: 2px solid transparent;
-    }
-    .cat-card:hover {
-        transform: translateY(-8px); 
-        box-shadow: var(--shadow-lg); 
-        border-color: var(--primary);
-    }
-    .cat-icon {
-        width: 64px;
-        height: 64px;
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 16px;
-    }
-    .cat-icon i {font-size: 28px; color: var(--primary);}
-    .cat-card h3 {font-size: 16px; font-weight: 600; margin-bottom: 4px;}
-    .cat-card p {font-size: 13px; color: var(--text-light);}
-    
-    /* Top Companies */
-    .companies-strip {
-        background: var(--white);
-        padding: 40px 5%;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-    }
-    .companies-grid {
-        display: flex;
-        gap: 40px;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    .company-logo {
-        height: 40px;
-        filter: grayscale(100%);
-        opacity: 0.6;
-        transition: all 0.3s;
-    }
-    .company-logo:hover {filter: grayscale(0%); opacity: 1;}
-    
-    /* Jobs Grid */
-    .jobs-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        max-width: 1200px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .jobs-grid {
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); 
-        gap: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
+    .job-grid {
+        display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr));
+        gap:24px; margin-bottom:40px;
     }
     .job-card {
-        background: var(--white); 
-        padding: 28px; 
-        border-radius: 16px; 
-        box-shadow: var(--shadow); 
-        border: 1px solid var(--border); 
-        transition: all 0.3s;
-        position: relative;
+        background:#fff; border:1px solid var(--border); border-radius:16px;
+        padding:28px; transition:all 0.3s; cursor:pointer; text-decoration:none;
+        color:inherit; display:block;
     }
     .job-card:hover {
-        box-shadow: var(--shadow-lg); 
-        transform: translateY(-4px);
-        border-color: var(--primary);
-    }
-    .job-badge {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: #fef3c7;
-        color: #92400e;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .job-header {display: flex; gap: 16px; margin-bottom: 16px;}
-    .job-logo {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        background: var(--bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: var(--primary);
-        flex-shrink: 0;
-    }
-    .job-info {flex: 1;}
-    .job-title {font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--text);}
-    .job-company {color: var(--text-light); font-size: 14px; font-weight: 500;}
-    .job-meta {
-        display: flex; 
-        gap: 16px; 
-        flex-wrap: wrap; 
-        margin: 16px 0;
-        font-size: 14px;
-        color: var(--text-light);
-    }
-    .job-meta span {display: flex; align-items: center; gap: 6px;}
-    .job-meta i {color: var(--primary);}
-    .job-tags {display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;}
-    .job-footer {
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        padding-top: 20px; 
-        border-top: 1px solid var(--border);
-    }
-    .job-salary {font-weight: 700; color: var(--success); font-size: 16px;}
-    .job-actions {display: flex; gap: 10px;}
-    .save-btn {
-        width: 40px;
-        height: 40px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--white);
-        color: var(--text-light);
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .save-btn:hover, .save-btn.saved {
-        background: #fee2e2;
-        color: #dc2626;
-        border-color: #fecaca;
-    }
-    
-    /* Stats */
-    .stats {
-        background: linear-gradient(135deg, var(--secondary) 0%, #1e293b 100%); 
-        color: #fff; 
-        padding: 80px 5%; 
-        text-align: center;
-    }
-    .stats-grid {
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-        gap: 60px; 
-        max-width: 1000px; 
-        margin: 0 auto;
-    }
-    .stat h3 {
-        font-size: 48px; 
-        font-weight: 800; 
-        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 8px;
-    }
-    .stat p {opacity: 0.8; font-size: 16px;}
-    
-    @media(max-width:768px){
-        .hero h1 {font-size: 36px;}
-        .hero p {font-size: 16px;}
-        .search-box {grid-template-columns: 1fr;}
-        .jobs-grid {grid-template-columns: 1fr;}
-        .categories {grid-template-columns: repeat(2, 1fr);}
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-content">
-        <h1>Find Your Dream Job Today</h1>
-        <p>Explore 5000+ opportunities from India's top companies</p>
-        
-        <div class="search-wrapper">
-            <form class="search-box" action="/" method="GET">
-                <div class="search-input">
-                    <i class="fas fa-search"></i>
-                    <input type="text" name="q" placeholder="Job title, skills, or company" value="{{ search or '' }}">
-                </div>
-                <div class="search-input">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <select name="location">
-                        <option value="">All Locations</option>
-                        {% for loc in locations %}
-                        <option value="{{ loc }}" {% if location==loc %}selected{% endif %}>{{ loc }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i> Search Jobs
-                </button>
-            </form>
-            
-            <div class="filter-pills">
-                <a href="/?remote=1" class="pill {% if remote=='1' %}active{% endif %}">
-                    <i class="fas fa-home"></i> Remote
-                </a>
-                <a href="/?category=IT Software" class="pill">
-                    <i class="fas fa-code"></i> IT Jobs
-                </a>
-                <a href="/?exp=Fresher" class="pill">
-                    <i class="fas fa-graduation-cap"></i> Fresher
-                </a>
-                <a href="/?category=Sales & Marketing" class="pill">
-                    <i class="fas fa-chart-line"></i> Sales
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Top Companies Strip -->
-{% if top_companies %}
-<section class="companies-strip">
-    <p style="text-align:center; color:var(--text-light); margin-bottom:24px; font-weight:500;">Trusted by 1200+ Companies</p>
-    <div class="companies-grid">
-        {% for company in top_companies %}
-        <div style="text-align:center;">
-            {% if company.logo %}
-            <img src="/{{ company.logo }}" alt="{{ company.company_name }}" class="company-logo">
-            {% else %}
-            <div style="font-weight:700; color:var(--text-light); font-size:18px;">{{ company.company_name }}</div>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
-
-<!-- Categories -->
-<section class="section">
-    <h2 class="section-title">Browse by Category</h2>
-    <p class="section-subtitle">Find jobs in your field of expertise</p>
-    <div class="categories">
-        {% for cat in categories[:8] %}
-        <a href="/?category={{ cat }}" class="cat-card" style="text-decoration:none; color:inherit;">
-            <div class="cat-icon">
-                {% if 'IT' in cat %}<i class="fas fa-laptop-code"></i>
-                {% elif 'Sales' in cat %}<i class="fas fa-chart-line"></i>
-                {% elif 'Marketing' in cat %}<i class="fas fa-bullhorn"></i>
-                {% elif 'HR' in cat %}<i class="fas fa-users"></i>
-                {% elif 'Finance' in cat %}<i class="fas fa-coins"></i>
-                {% elif 'BPO' in cat %}<i class="fas fa-headset"></i>
-                {% elif 'Engineer' in cat %}<i class="fas fa-cogs"></i>
-                {% else %}<i class="fas fa-briefcase"></i>{% endif %}
-            </div>
-            <h3>{{ cat }}</h3>
-            <p>Explore jobs</p>
-        </a>
-        {% endfor %}
-    </div>
-</section>
-
-<!-- Latest Jobs -->
-<section class="section" style="background:var(--white);">
-    <div class="jobs-header">
-        <div>
-            <h2 class="section-title" style="text-align:left; margin:0;">Latest Jobs</h2>
-            <p style="color:var(--text-light); margin-top:8px;">{{ jobs|length }} jobs found</p>
-        </div>
-    </div>
-    
-    <div class="jobs-grid">
-        {% for job in jobs %}
-        <div class="job-card">
-            {% if loop.index <= 3 %}
-            <div class="job-badge">🔥 Hot</div>
-            {% endif %}
-            
-            <div class="job-header">
-                <div class="job-logo">
-                    {% if job.logo %}
-                    <img src="/{{ job.logo }}" alt="{{ job.company_name }}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
-                    {% else %}
-                    <i class="fas fa-building"></i>
-                    {% endif %}
-                </div>
-                <div class="job-info">
-                    <div class="job-title">{{ job.title }}</div>
-                    <div class="job-company">{{ job.company_name or 'Confidential' }}</div>
-                </div>
-            </div>
-            
-            <div class="job-meta">
-                <span><i class="fas fa-map-marker-alt"></i> {{ job.location or 'India' }}</span>
-                <span><i class="fas fa-briefcase"></i> {{ job.experience or '0-2 Yrs' }}</span>
-                <span><i class="fas fa-layer-group"></i> {{ job.category }}</span>
-            </div>
-            
-            <div class="job-tags">
-                {% if job.skills %}
-                    {% for skill in job.skills.split(',')[:3] %}
-                    <span class="badge badge-blue">{{ skill.strip() }}</span>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            
-            <div class="job-footer">
-                <div class="job-salary">{{ job.salary or 'Not Disclosed' }}</div>
-                <div class="job-actions">
-                    <button class="save-btn" onclick="saveJob({{ job.id }}, this)">
-                        <i class="far fa-bookmark"></i>
-                    </button>
-                    <a href="/job/{{ job.id }}" class="btn btn-primary">View Details</a>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div style="grid-column:1/-1; text-align:center; padding:60px 20px;">
-            <i class="fas fa-inbox" style="font-size:64px; color:var(--text-light); margin-bottom:20px;"></i>
-            <h3 style="margin-bottom:10px;">No jobs found</h3>
-            <p style="color:var(--text-light);">Try changing your search filters</p>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-
-<!-- Stats -->
-<section class="stats">
-    <div class="stats-grid">
-        <div class="stat">
-            <h3>5000+</h3>
-            <p>Active Jobs</p>
-        </div>
-        <div class="stat">
-            <h3>1200+</h3>
-            <p>Top Companies</p>
-        </div>
-        <div class="stat">
-            <h3>50K+</h3>
-            <p>Job Seekers</p>
-        </div>
-        <div class="stat">
-            <h3>95%</h3>
-            <p>Success Rate</p>
-        </div>
-    </div>
-</section>
-
-<script>
-function saveJob(jobId, btn) {
-    const email = prompt('Enter your email to save this job:');
-    if (!email) return;
-    
-    fetch(`/save-job/${jobId}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email: email})
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            btn.classList.add('saved');
-            btn.innerHTML = '<i class="fas fa-bookmark"></i>';
-            alert('Job saved successfully!');
-        } else {
-            alert(data.msg);
-        }
-    });
-}
-</script>
-{% endblock %}
+        box-shadow:var(--shadow-lg); transform:translateY(-4px
