@@ -1,29 +1,57 @@
 {% extends "base.html" %}
-
 {% block title %}Edit Job - SureJob{% endblock %}
 
-{% block extra_css %}
-<style>
-    .form-container {max-width:800px; margin:40px auto; padding:0 5%;}
-    .form-card {
-        background:var(--white); padding:40px; border-radius:16px; 
-        border:1px solid var(--border); box-shadow:var(--shadow);
-    }
-    .form-card h2 {font-size:28px; font-weight:700; margin-bottom:8px;}
-    .form-card p {color:var(--text-light); margin-bottom:32px;}
-    .form-group {margin-bottom:20px;}
-    .form-label {display:block; font-weight:600; margin-bottom:8px; font-size:14px;}
-    .form-input {
-        width:100%; padding:14px 16px; border:2px solid var(--border); 
-        border-radius:10px; font-size:15px; transition:all 0.2s; outline:none;
-    }
-    .form-input:focus {border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
-    .form-row {display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-    .btn-submit {
-        width:100%; background:var(--primary); color:#fff; border:none; 
-        padding:16px; border-radius:10px; font-weight:700; font-size:16px; 
-        cursor:pointer; transition:all 0.2s;
-    }
-    .btn-submit:hover {background:var(--primary-dark); transform:translateY(-2px);}
-    .btn-danger {
-        width:100%; background:var(--danger); color:#fff; border:none; 
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h3 class="mb-4">Edit Job</h3>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Job Title</label>
+                            <input type="text" name="title" class="form-control" value="{{ job['title'] }}" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="location" class="form-control" value="{{ job['location'] }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Job Type</label>
+                                <select name="job_type" class="form-select" required>
+                                    <option {{ 'selected' if job['job_type'] == 'Full Time' }}>Full Time</option>
+                                    <option {{ 'selected' if job['job_type'] == 'Part Time' }}>Part Time</option>
+                                    <option {{ 'selected' if job['job_type'] == 'Internship' }}>Internship</option>
+                                    <option {{ 'selected' if job['job_type'] == 'Contract' }}>Contract</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Salary</label>
+                                <input type="text" name="salary" class="form-control" value="{{ job['salary'] }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Experience</label>
+                                <input type="text" name="experience" class="form-control" value="{{ job['experience'] }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Job Description</label>
+                            <textarea name="description" class="form-control" rows="4" required>{{ job['description'] }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Requirements</label>
+                            <textarea name="requirements" class="form-control" rows="4" required>{{ job['requirements'] }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Job</button>
+                        <a href="/company-dashboard" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
