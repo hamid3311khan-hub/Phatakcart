@@ -282,25 +282,18 @@ def company_login():
 def company_dashboard():
     if 'company_id' not in session:
         return redirect('/company-login')
-    company_id = session['company_id']
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT * FROM companies WHERE id =?', (company_id,))
-    company = c.fetchone()
-    c.execute('''SELECT j.*, COUNT(a.id) as application_count
-                 FROM jobs j LEFT JOIN applications a ON j.id = a.job_id
-                 WHERE j.company_id =? GROUP BY j.id ORDER BY j.id DESC''', (company_id,))
+    
+    # Jobs ke saath application count bhi nikaal lo
+    c.execute('''SELECT j.*, 
+                 (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as app_count 
+                 FROM jobs j WHERE j.company_id = ? ORDER BY j.posted_on DESC''', 
+                 (session['company_id'],))
     jobs = c.fetchall()
-    c.execute('SELECT COUNT(*) FROM applications a JOIN jobs j ON a.job_id = j.id WHERE j.company_id =?', (company_id,))
-    total_applications = c.fetchone()[0]
-    c.execute("SELECT COUNT(*) FROM jobs WHERE company_id =? AND status = 'Active'", (company_id,))
-    active_jobs = c.fetchone()[0]
-    c.execute("SELECT COUNT(*) FROM applications a JOIN jobs j ON a.job_id = j.id WHERE j.company_id =? AND a.status = 'Shortlisted'", (company_id,))
-    shortlisted = c.fetchone()[0]
     conn.close()
-    return render_template('company_dashboard.html', company=company, jobs=jobs,
-                         total_applications=total_applications, active_jobs=active_jobs, shortlisted=shortlisted)
+    return render_template('company_dashboard.html', jobs=jobs)
 
 @app.route('/company/<int:company_id>')
 def company_profile(company_id):
