@@ -3,245 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SureJob - India's Job Portal{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>{% block title %}SureJob{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #0f172a;
-            --success: #16a34a;
-            --bg: #f8fafc;
-            --white: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --text-light: #64748b;
-            --shadow: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+            --primary:#2563eb; --primary-dark:#1e40af; --secondary:#0f172a;
+            --success:#10b981; --danger:#ef4444; --warning:#f59e0b;
+            --text:#1e293b; --text-light:#64748b; --border:#e2e8f0;
+            --bg:#f8fafc; --white:#fff;
+            --shadow:0 1px 3px rgba(0,0,0,0.1); --shadow-lg:0 10px 15px -3px rgba(0,0,0,0.1);
         }
-        * {margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif;}
-        body {background:var(--bg); color:var(--text); line-height:1.6;}
+        body {font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.6;}
         
-        /* Navbar */
-        nav {
-            background:var(--white); 
-            padding:0 5%; 
-            display:flex; 
-            justify-content:space-between; 
-            align-items:center; 
-            box-shadow:var(--shadow); 
-            position:sticky; 
-            top:0; 
-            z-index:1000;
-            height:64px;
-        }
-        .logo {
-            font-size:24px; 
-            font-weight:800; 
-            color:var(--primary); 
-            text-decoration:none;
-            display:flex;
-            align-items:center;
-            gap:8px;
-        }
-        .logo i {font-size:28px;}
-        .nav-actions {display:flex; gap:12px; align-items:center;}
-        .btn {
-            padding:10px 20px; 
-            border-radius:8px; 
-            text-decoration:none; 
-            font-weight:500; 
-            font-size:14px;
-            border:none;
-            cursor:pointer;
-            transition:all 0.2s;
-            display:inline-flex;
-            align-items:center;
-            gap:6px;
-        }
+        /* Header */
+        .header {background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1000; box-shadow:var(--shadow);}
+        .nav {max-width:1400px; margin:0 auto; padding:0 5%; display:flex; justify-content:space-between; align-items:center; height:68px;}
+        .logo {font-size:28px; font-weight:800; color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:8px;}
+        .logo i {font-size:24px;}
+        .nav-links {display:flex; gap:32px; align-items:center;}
+        .nav-links a {color:var(--text); text-decoration:none; font-weight:500; font-size:15px; transition:color 0.2s;}
+        .nav-links a:hover {color:var(--primary);}
+        .nav-buttons {display:flex; gap:12px; align-items:center;}
+        .btn {padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; text-decoration:none; display:inline-flex; align-items:center; gap:8px; border:none;}
         .btn-primary {background:var(--primary); color:var(--white);}
         .btn-primary:hover {background:var(--primary-dark); transform:translateY(-1px);}
-        .btn-secondary {color:var(--text-light); border:1px solid var(--border); background:var(--white);}
-        .btn-secondary:hover {background:var(--bg);}
-        .btn-success {background:var(--success); color:var(--white);}
+        .btn-outline {background:transparent; color:var(--primary); border:1.5px solid var(--primary);}
+        .btn-outline:hover {background:var(--primary); color:var(--white);}
         
-        /* Flash Messages */
-        .flash-container {max-width:1200px; margin:20px auto 0; padding:0 5%;}
-        .flash {
-            padding:14px 20px; 
-            border-radius:8px; 
-            margin-bottom:16px;
-            display:flex;
-            align-items:center;
-            gap:10px;
-            font-weight:500;
-        }
-        .flash-success {background:#dcfce7; color:#166534; border:1px solid #bbf7d0;}
-        .flash-error {background:#fee2e2; color:#991b1b; border:1px solid #fecaca;}
+        /* Mobile Menu */
+        .mobile-toggle {display:none; background:none; border:none; font-size:24px; cursor:pointer; color:var(--text);}
         
-        /* Content */
-        main {min-height:calc(100vh - 200px);}
+        /* Main */
+        .main {min-height:calc(100vh - 68px - 200px);}
         
         /* Footer */
-        footer {
-            background:var(--secondary); 
-            color:#94a3b8; 
-            padding:40px 5% 20px; 
-            margin-top:80px;
-        }
-        .footer-grid {
-            max-width:1200px;
-            margin:0 auto;
-            display:grid;
-            grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-            gap:40px;
-            margin-bottom:30px;
-        }
-        .footer-col h4 {color:var(--white); margin-bottom:16px; font-size:16px;}
-        .footer-col a {
-            display:block;
-            color:#94a3b8;
-            text-decoration:none;
-            margin-bottom:10px;
-            font-size:14px;
-            transition:color 0.2s;
-        }
-        .footer-col a:hover {color:var(--white);}
-        .footer-bottom {
-            border-top:1px solid #334155;
-            padding-top:20px;
-            text-align:center;
-            font-size:14px;
-        }
+        .footer {background:var(--secondary); color:#94a3b8; padding:48px 5% 24px; margin-top:80px;}
+        .footer-content {max-width:1400px; margin:0 auto; display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:48px; margin-bottom:32px;}
+        .footer h4 {color:var(--white); margin-bottom:16px; font-size:16px;}
+        .footer a {color:#94a3b8; text-decoration:none; display:block; margin-bottom:12px; font-size:14px; transition:color 0.2s;}
+        .footer a:hover {color:var(--white);}
+        .footer-bottom {border-top:1px solid #334155; padding-top:24px; text-align:center; font-size:14px;}
         
         /* Utilities */
-        .container {max-width:1200px; margin:0 auto; padding:0 5%;}
-        .card {
-            background:var(--white);
-            border:1px solid var(--border);
-            border-radius:12px;
-            padding:24px;
-            transition:all 0.2s;
-        }
-        .card:hover {box-shadow:var(--shadow-lg); transform:translateY(-2px);}
-        .badge {
-            display:inline-block;
-            padding:4px 12px;
-            border-radius:20px;
-            font-size:12px;
-            font-weight:500;
-        }
+        .container {max-width:1400px; margin:0 auto; padding:0 5%;}
+        .badge {padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; display:inline-block;}
         .badge-blue {background:#dbeafe; color:#1e40af;}
         .badge-green {background:#dcfce7; color:#166534;}
+        .badge-orange {background:#fed7aa; color:#9a3412;}
+        .alert {padding:12px 16px; border-radius:8px; margin-bottom:20px;}
+        .alert-success {background:#dcfce7; color:#166534;}
+        .alert-danger {background:#fee2e2; color:#991b1b;}
         
-        /* Mobile */
-        @media (max-width:768px) {
-            nav {padding:0 4%; height:60px;}
-            .logo {font-size:20px;}
-            .nav-actions {gap:8px;}
-            .btn {padding:8px 14px; font-size:13px;}
-            .footer-grid {grid-template-columns:1fr; gap:30px;}
+        @media(max-width:768px){
+            .nav-links {display:none;}
+            .mobile-toggle {display:block;}
+            .footer-content {grid-template-columns:1fr; gap:32px;}
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/" class="logo">
-            <i class="fas fa-briefcase"></i>
-            Sure<span style="color:var(--secondary)">Job</span>
-        </a>
-      <div class="nav-actions">
-    {% if session.get('company_id') %}
-        <a href="/company-dashboard" class="btn btn-secondary">
-            <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="/company-logout" class="btn btn-primary">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo"><i class="fas fa-briefcase"></i>SureJob</a>
+            <div class="nav-links">
+                <a href="/">Jobs</a>
+                <a href="/companies">Companies</a>
+                {% if session.get('company_id') %}
+                    <a href="/company-dashboard">Dashboard</a>
+                {% elif session.get('candidate_id') %}
+                    <a href="/profile">Profile</a>
+                    <a href="/saved-jobs">Saved Jobs</a>
+                {% endif %}
+            </div>
+            <div class="nav-buttons">
+                {% if session.get('company_id') %}
+                    <a href="/post-job" class="btn btn-primary"><i class="fas fa-plus"></i>Post Job</a>
+                    <a href="/logout" class="btn btn-outline">Logout</a>
+                {% elif session.get('candidate_id') %}
+                    <a href="/logout" class="btn btn-outline">Logout</a>
+                {% else %}
+                    <a href="/candidate-login" class="btn btn-outline">Login</a>
+                    <a href="/company-register" class="btn btn-primary">For Employers</a>
+                {% endif %}
+            </div>
+            <button class="mobile-toggle"><i class="fas fa-bars"></i></button>
+        </nav>
+    </header>
     
-    {% elif session.get('candidate_id') %}
-        <a href="/candidate-dashboard" class="btn btn-secondary">
-            <i class="fas fa-user"></i> {{ session['candidate_name'] }}
-        </a>
-        <a href="/candidate-logout" class="btn btn-primary">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    
-    {% elif session.get('admin') %}
-        <a href="/admin" class="btn btn-secondary">
-            <i class="fas fa-user-shield"></i> Admin
-        </a>
-        <a href="/logout" class="btn btn-primary">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    
-    {% else %}
-        <a href="/candidate-login" class="btn btn-secondary">
-            <i class="fas fa-sign-in-alt"></i> Job Seeker Login
-        </a>
-        <a href="/candidate-register" class="btn btn-secondary">
-            <i class="fas fa-user-plus"></i> Job Seeker Register
-        </a>
-        <a href="/company-login" class="btn btn-primary">
-            <i class="fas fa-building"></i> Employer
-        </a>
-    {% endif %}
-     </div>
-    </nav>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category or 'success' }}">
-                    <i class="fas fa-{% if category=='error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    {% endwith %}
-
-    <main>
+    <main class="main">
         {% block content %}{% endblock %}
     </main>
-
-    <footer>
-        <div class="footer-grid">
-            <div class="footer-col">
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <h4><i class="fas fa-briefcase"></i> SureJob</h4>
+                <p style="margin-bottom:16px;">India's trusted job portal connecting talent with opportunity.</p>
+                <div style="display:flex; gap:12px;">
+                    <a href="#" style="margin:0;"><i class="fab fa-facebook"></i></a>
+                    <a href="#" style="margin:0;"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="margin:0;"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div>
                 <h4>For Job Seekers</h4>
                 <a href="/">Browse Jobs</a>
-                <a href="/?remote=1">Remote Jobs</a>
-                <a href="/?category=IT Software">IT Jobs</a>
-                <a href="/?category=Sales & Marketing">Sales Jobs</a>
+                <a href="/candidate-register">Create Account</a>
+                <a href="/profile">My Profile</a>
             </div>
-            <div class="footer-col">
+            <div>
                 <h4>For Employers</h4>
                 <a href="/company-register">Post a Job</a>
-                <a href="/company-login">Employer Login</a>
+                <a href="/company-login">Company Login</a>
                 <a href="/company-dashboard">Dashboard</a>
             </div>
-            <div class="footer-col">
+            <div>
                 <h4>Company</h4>
                 <a href="#">About Us</a>
                 <a href="#">Contact</a>
                 <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
-            </div>
-            <div class="footer-col">
-                <h4>Connect</h4>
-                <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
-                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
-                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© 2026 SureJob - India's Trusted Job Portal. All rights reserved.</p>
+            <p>&copy; 2026 SureJob. All rights reserved.</p>
         </div>
     </footer>
-
+    
     {% block extra_js %}{% endblock %}
 </body>
-    </html>
+</html>
