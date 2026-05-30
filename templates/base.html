@@ -152,30 +152,43 @@
             <i class="fas fa-briefcase"></i>
             Sure<span style="color:var(--secondary)">Job</span>
         </a>
-        <div class="nav-actions">
-            {% if session.get('company_id') %}
-                <a href="/company-dashboard" class="btn btn-secondary">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a href="/logout" class="btn btn-primary">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            {% elif session.get('admin') %}
-                <a href="/admin" class="btn btn-secondary">
-                    <i class="fas fa-user-shield"></i> Admin
-                </a>
-                <a href="/logout" class="btn btn-primary">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            {% else %}
-                <a href="/company-login" class="btn btn-secondary">
-                    <i class="fas fa-building"></i> Employer
-                </a>
-                <a href="/company-register" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Post Job
-                </a>
-            {% endif %}
-        </div>
+      <div class="nav-actions">
+    {% if session.get('company_id') %}
+        <a href="/company-dashboard" class="btn btn-secondary">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </a>
+        <a href="/company-logout" class="btn btn-primary">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    
+    {% elif session.get('candidate_id') %}
+        <a href="/candidate-dashboard" class="btn btn-secondary">
+            <i class="fas fa-user"></i> {{ session['candidate_name'] }}
+        </a>
+        <a href="/candidate-logout" class="btn btn-primary">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    
+    {% elif session.get('admin') %}
+        <a href="/admin" class="btn btn-secondary">
+            <i class="fas fa-user-shield"></i> Admin
+        </a>
+        <a href="/logout" class="btn btn-primary">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    
+    {% else %}
+        <a href="/candidate-login" class="btn btn-secondary">
+            <i class="fas fa-sign-in-alt"></i> Job Seeker Login
+        </a>
+        <a href="/candidate-register" class="btn btn-secondary">
+            <i class="fas fa-user-plus"></i> Job Seeker Register
+        </a>
+        <a href="/company-login" class="btn btn-primary">
+            <i class="fas fa-building"></i> Employer
+        </a>
+    {% endif %}
+     </div>
     </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
