@@ -217,7 +217,6 @@ def save_job(job_id):
         conn.close()
         return jsonify({'success': False, 'msg': 'Already saved'})
 
-# ===== CANDIDATE ROUTES =====
 @app.route('/candidate-register', methods=['GET', 'POST'])
 def candidate_register():
     if request.method == 'POST':
@@ -320,7 +319,6 @@ def quick_apply(job_id):
     flash('1-Click me apply ho gaya! Best of luck 🎉', 'success')
     return redirect(f'/job/{job_id}')
 
-# ===== COMPANY ROUTES =====
 @app.route('/company-register', methods=['GET', 'POST'])
 def company_register():
     if request.method == 'POST':
@@ -493,9 +491,8 @@ def update_status(app_id, status):
         return redirect('/company-dashboard')
 
     conn = get_db()
-    app_data = conn.execute('''
-        SELECT a.id, a.job_id, a.email, a.name, j.title, j.company_id
-        FROM applications a
-        JOIN jobs j ON a.job_id = j.id
-        WHERE a.id =? AND j.company_id =?
-    ''', (app_id
+    app_data = conn.execute('SELECT a.id, a.job_id, a.email, a.name, j.title, j.company_id FROM applications a JOIN jobs j ON a.job_id = j.id WHERE a.id =? AND j.company_id =?', (app_id, session['company_id'])).fetchone()
+
+    if not app_data:
+        conn.close()
+        flash('Applica
