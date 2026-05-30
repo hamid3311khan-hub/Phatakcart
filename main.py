@@ -106,7 +106,7 @@ def jobs():
                  WHERE j.status = 'Active' ORDER BY j.id DESC''')
     jobs = c.fetchall()
     conn.close()
-    return render_template('job-detail.html', jobs=jobs)
+    return render_template('job_detail.html', jobs=jobs)
 
 @app.route('/job/<int:job_id>')
 def job_detail(job_id):
