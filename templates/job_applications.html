@@ -10,38 +10,89 @@
     </div>
     
     {% if applications %}
-    <div class="alert alert-info">
-        <strong>Total Applications:</strong> {{ applications|length }}
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ applications|length }}</h5>
+                    <p class="card-text text-muted">Total Apps</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ applications|selectattr('status', 'equalto', 'New')|list|length }}</h5>
+                    <p class="card-text text-primary">New</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ applications|selectattr('status', 'equalto', 'Shortlisted')|list|length }}</h5>
+                    <p class="card-text text-success">Shortlisted</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ applications|selectattr('status', 'equalto', 'Interview')|list|length }}</h5>
+                    <p class="card-text text-warning">Interview</p>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="table-responsive">
-        <table class="table table-bordered">
+        <table class="table table-bordered align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>#</th>
                     <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
+                    <th>Contact</th>
                     <th>Applied On</th>
-                    <th>Resume</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for app in applications %}
                 <tr>
                     <td>{{ loop.index }}</td>
-                    <td><strong>{{ app.name }}</strong></td>
-                    <td>{{ app.email }}</td>
+                    <td>
+                        <strong>{{ app.name }}</strong><br>
+                        <small class="text-muted">{{ app.email }}</small>
+                    </td>
                     <td>{{ app.phone }}</td>
                     <td>{{ app.applied_on }}</td>
                     <td>
-                        {% if app.resume %}
-                        <a href="/{{ app.resume }}" target="_blank" class="btn btn-sm btn-success">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+                        {% if app.status == 'New' %}
+                            <span class="badge bg-primary">New</span>
+                        {% elif app.status == 'Shortlisted' %}
+                            <span class="badge bg-success">Shortlisted</span>
+                        {% elif app.status == 'Interview' %}
+                            <span class="badge bg-warning text-dark">Interview</span>
+                        {% elif app.status == 'Rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
                         {% else %}
-                        <span class="text-muted">No Resume</span>
+                            <span class="badge bg-secondary">{{ app.status }}</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group-vertical btn-group-sm d-grid gap-1">
+                            <div class="btn-group btn-group-sm">
+                                <a href="/update-status/{{app.id}}/Shortlisted" class="btn btn-outline-success">Shortlist</a>
+                                <a href="/update-status/{{app.id}}/Interview" class="btn btn-outline-warning">Interview</a>
+                                <a href="/update-status/{{app.id}}/Rejected" class="btn btn-outline-danger">Reject</a>
+                            </div>
+                            {% if app.resume %}
+                            <a href="/{{app.resume}}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-download"></i> Resume
+                            </a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% if app.cover_letter %}
@@ -58,7 +109,7 @@
     </div>
     {% else %}
     <div class="alert alert-warning">
-        Abhi tak koi application nahi aayi is job pe.
+        <i class="fas fa-info-circle"></i> Abhi tak koi application nahi aayi is job pe.
     </div>
     {% endif %}
 </div>
