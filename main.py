@@ -311,18 +311,31 @@ def post_job():
 def edit_job(job_id):
     if 'company_id' not in session:
         return redirect('/company-login')
+    
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
     if request.method == 'POST':
         data = request.form
-        c.execute('''UPDATE jobs SET title=?, job_type=?, experience=?, location=?,
-                     openings=?, salary=?, description=?, requirements=?, skills=?, perks=?
+        # .get() use kiya taaki missing field pe na fate
+        c.execute('''UPDATE jobs SET 
+                     title=?, job_type=?, experience=?, location=?,
+                     openings=?, salary=?, description=?, requirements=?, 
+                     skills=?, perks=?
                      WHERE id=? AND company_id=?''',
-                 (data['title'], data['job_type'], data['experience'], data['location'],
-                  data['openings'], data['salary'], data['description'], data['requirements'],
-                  data.get('skills'), data.get('perks'), job_id, session['company_id']))
+                 (data.get('title'), 
+                  data.get('job_type'), 
+                  data.get('experience'), 
+                  data.get('location'),
+                  data.get('openings'), 
+                  data.get('salary'), 
+                  data.get('description'), 
+                  data.get('requirements'),
+                  data.get('skills', ''), 
+                  data.get('perks', ''), 
+                  job_id, 
+                  session['company_id']))
         conn.commit()
         conn.close()
         return redirect('/company-dashboard')
