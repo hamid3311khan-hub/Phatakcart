@@ -398,6 +398,52 @@ def company_logout():
     return redirect('/')
 
 # ==================== RUN APP ====================
+# ==================== AUTO CHECK ROUTE ====================
+@app.route('/check-project')
+def check_project():
+    import py_compile
+    import re
+    import os
+    
+    result = []
+    result.append("=== SUREJOB PROJECT CHECK ===\n")
+    
+    # 1. Python Syntax Check
+    try:
+        py_compile.compile('main.py', doraise=True)
+        result.append("✅ main.py - Syntax OK")
+    except Exception as e:
+        result.append(f"❌ main.py - ERROR: {str(e)}")
+    
+    # 2. Template Files Check
+    if os.path.exists('templates'):
+        templates = os.listdir('templates')
+        result.append(f"\n✅ Templates Found: {len(templates)} files")
+        
+        for file in templates:
+            if file.endswith('.html'):
+                filepath = os.path.join('templates', file)
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                ifs = len(re.findall(r'{%\s*if\s+', content))
+                endifs = len(re.findall(r'{%\s*endif\s*%}', content))
+                
+                if ifs == endifs:
+                    result.append(f"✅ {file} - Jinja OK")
+                else:
+                    result.append(f"❌ {file} - if/endif mismatch: {ifs} if, {endifs} endif")
+    else:
+        result.append("❌ templates folder missing")
+    
+    # 3. Database Check
+    if os.path.exists('surejob.db'):
+        result.append("\n✅ surejob.db - Database exists")
+    else:
+        result.append("\n⚠️ surejob.db - Not created yet")
+    
+    result.append("\n=== CHECK COMPLETE ===")
+    return "<br>".join(result)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
