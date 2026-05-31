@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Your Jobs</h2>
+    <a href="{{ url_for('post_job') }}" class="btn btn-success mb-3">Post New Job</a>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Location</th>
+                <th>Openings</th>
+                <th>Posted On</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.title }}</td>
+                <td>{{ job.location }}</td>
+                <td>{{ job.openings }}</td>
+                <td>{{ job.posted_on }}</td>
+                <td>
+                    <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-sm btn-primary">View Applications</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
