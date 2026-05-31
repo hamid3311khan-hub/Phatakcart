@@ -1,22 +1,47 @@
-{% extends "base.html" %}
-{% block title %}Admin Panel - SureJob{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SureJob - Find Your Dream Job</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">SureJob</a>
+            <div class="navbar-nav ms-auto">
+                {% if session.user_id %}
+                    {% if session.user_type == 'candidate' %}
+                        <a class="nav-link" href="{{ url_for('candidate_dashboard') }}">Dashboard</a>
+                    {% elif session.user_type == 'company' %}
+                        <a class="nav-link" href="{{ url_for('company_dashboard') }}">Dashboard</a>
+                    {% endif %}
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('candidate_login') }}">Candidate Login</a>
+                    <a class="nav-link" href="{{ url_for('company_login') }}">Company Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
 
-{% block content %}
-<div class="container my-5">
-    <h3 class="mb-4"><i class="bi bi-shield-lock"></i> Admin Panel</h3>
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="candidates-tab" data-bs-toggle="tab" data-bs-target="#candidates" type="button">Candidates</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies" type="button">Companies</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button">Jobs</button>
-        </li>
-    </ul>
+        {% block content %}
+        {% endblock %}
+    </div>
 
-    <div class="tab-content" id="adminTabContent">
-        <!-- Candidates Tab -->
-        <div class="tab-pane fade show active"
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
