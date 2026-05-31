@@ -34,3 +34,25 @@ def init_db():
     ''')
     conn.execute('''
         CREATE TABLE IF NOT EXISTS companies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            company_name TEXT,
+            mobile TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            location TEXT,
+            salary TEXT,
+            job_type TEXT,
+            experience TEXT,
+            openings INTEGER DEFAULT 1,
+            requirements TEXT,
+            skills TEXT,
+            perks TEXT,
+            company_id INTEGER,
