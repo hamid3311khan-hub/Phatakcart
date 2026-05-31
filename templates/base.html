@@ -1,117 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SureJob{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-briefcase"></i> SureJob
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/jobs">Jobs</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    {% if session.user_id %}
-                        {% if session.user_type == 'candidate' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle"></i> {{ session.name }}
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/candidate/dashboard">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="/candidate/create-resume">
-                                        <i class="bi bi-file-earmark-plus"></i> Create Resume
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="/logout">
-                                        <i class="bi bi-box-arrow-right"></i> Logout
-                                    </a></li>
-                                </ul>
-                            </li>
-                        {% elif session.user_type == 'company' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-building"></i> {{ session.name }}
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="/company/dashboard">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="/post-job">
-                                        <i class="bi bi-plus-circle"></i> Post Job
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="/manage-jobs">
-                                        <i class="bi bi-briefcase"></i> Manage Jobs
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="/logout">
-                                        <i class="bi bi-box-arrow-right"></i> Logout
-                                    </a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                Login
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/candidate/login">Candidate Login</a></li>
-                                <li><a class="dropdown-item" href="/company/login">Company Login</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                Register
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/candidate/register">Candidate Register</a></li>
-                                <li><a class="dropdown-item" href="/company/register">Company Register</a></li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
+{% block title %}Admin Panel - SureJob{% endblock %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container mt-3">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+{% block content %}
+<div class="container my-5">
+    <h3 class="mb-4"><i class="bi bi-shield-lock"></i> Admin Panel</h3>
 
-    {% block content %}{% endblock %}
+    <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="candidates-tab" data-bs-toggle="tab" data-bs-target="#candidates" type="button">Candidates</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies" type="button">Companies</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button">Jobs</button>
+        </li>
+    </ul>
 
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        <p class="mb-0">&copy; 2026 SureJob. All rights reserved.</p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-    </html>
+    <div class="tab-content" id="adminTabContent">
+        <!-- Candidates Tab -->
+        <div class="tab-pane fade show active"
