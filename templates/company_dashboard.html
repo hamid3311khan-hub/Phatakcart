@@ -9,7 +9,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="card text-center bg-primary text-white">
                 <div class="card-body">
                     <h3>{{ jobs|length }}</h3>
@@ -17,7 +17,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="card text-center bg-success text-white">
                 <div class="card-body">
                     <h3>{{ jobs|sum(attribute='app_count') }}</h3>
@@ -49,7 +49,7 @@
                     <td><span class="badge bg-secondary">{{ job['job_type'] or 'N/A' }}</span></td>
                     <td class="text-center">
                         <a href="/job-applications/{{ job['id'] }}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-people"></i> {{ job['app_count'] }}
+                            {{ job['app_count'] }} Applications
                         </a>
                     </td>
                     <td>{{ job['posted_on'][:10] }}</td>
