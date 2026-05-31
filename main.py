@@ -26,8 +26,23 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            location TEXT,
+            salary TEXT,
+            job_type TEXT,
+            experience TEXT,
+            company_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (company_id) REFERENCES companies (id)
+        )
+    ''')
     conn.commit()
     conn.close()
+    print("Database initialized ✅")
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -36,7 +51,15 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    conn = get_db_connection()
+    jobs = conn.execute('''
+        SELECT jobs.*, companies.company_name 
+        FROM jobs 
+        JOIN companies ON jobs.company_id = companies.id 
+        ORDER BY jobs.id DESC LIMIT 6
+    ''').fetchall()
+    conn.close()
+    return render_template('index.html', jobs=jobs)
 
 @app.route('/candidate/register', methods=['GET', 'POST'])
 def candidate_register():
