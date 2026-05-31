@@ -239,6 +239,33 @@ def create_resume():
     conn.close()
     return render_template('create_resume.html', candidate=candidate)
 
+@app.route('/candidate/upload-resume', methods=['POST'])
+def upload_resume():
+    if 'user_id' not in session or session['user_type']!= 'candidate':
+        return redirect(url_for('candidate_login'))
+    
+    if 'resume' not in request.files:
+        flash('No file selected', 'danger')
+        return redirect(url_for('candidate_dashboard'))
+    
+    file = request.files['resume']
+    if file.filename == '':
+        flash('No file selected', 'danger')
+        return redirect(url_for('candidate_dashboard'))
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"user_{session['user_id']}_{file.filename}")
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        conn = get_db_connection()
+        conn.execute('UPDATE candidates SET resume =? WHERE id =?', (filename, session['user_id']))
+        conn.commit()
+        conn.close()
+        flash('Resume uploaded successfully!', 'success')
+    else:
+        flash('Invalid file. Only PDF, DOC, DOCX allowed', 'danger')
+    
+    return redirect(url_for('candidate_dashboard'))
+    
 @app.route('/company/register', methods=['GET', 'POST'])
 def company_register():
     if request.method == 'POST':
