@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Create Your Resume</h3>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" name="full_name" class="form-control" value="{{ candidate.full_name or '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" value="{{ candidate.email }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <input type="text" name="phone" class="form-control" value="{{ candidate.mobile or '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Summary</label>
+        <textarea name="summary" class="form-control" rows="3" placeholder="Brief summary about yourself"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Education</label>
+        <textarea name="education" class="form-control" rows="4" placeholder="B.Tech Computer Science - XYZ University, 2023"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Experience</label>
+        <textarea name="experience" class="form-control" rows="4" placeholder="Software Developer - ABC Company, 2023-Present"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Skills</label>
+        <textarea name="skills" class="form-control" rows="3" placeholder="Python, Flask, HTML, CSS, JavaScript"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Generate Resume PDF</button>
+    <a href="{{ url_for('candidate_dashboard') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
