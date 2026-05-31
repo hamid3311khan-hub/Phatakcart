@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>Welcome, {{ candidate.full_name }}</h3>
+    <h3>Welcome, {{ session.name }}</h3>
     <a href="{{ url_for('create_resume') }}" class="btn btn-outline-primary">Create Resume</a>
 </div>
 <div class="card mb-4">
