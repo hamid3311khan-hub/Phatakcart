@@ -4,11 +4,11 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h3 class="text-center mb-4">Candidate Registration</h3>
-                <form method="POST" enctype="multipart/form-data">
+                <h3 class="text-center mb-4">Company Registration</h3>
+                <form method="POST">
                     <div class="mb-3">
-                        <label>Full Name</label>
-                        <input type="text" name="full_name" class="form-control" required>
+                        <label>Company Name</label>
+                        <input type="text" name="company_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label>Email</label>
@@ -21,10 +21,6 @@
                     <div class="mb-3">
                         <label>Password</label>
                         <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Upload Resume (PDF/DOC)</label>
-                        <input type="file" name="resume" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Register</button>
                 </form>
