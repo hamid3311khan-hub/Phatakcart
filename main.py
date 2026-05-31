@@ -1,7 +1,24 @@
 from flask import Flask, request, render_template, redirect, url_for
 import sqlite3
+import os
 
 app = Flask(__name__)
+
+def init_db():
+    conn = sqlite3.connect('database.db')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS candidates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            mobile TEXT,
+            full_name TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+    print("Database initialized ✅")
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -26,6 +43,9 @@ def register():
     conn.close()
     
     return "Registration Successful!"
+
+# Server start hote hi DB check karo
+init_db()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
