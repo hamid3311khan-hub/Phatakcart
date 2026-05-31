@@ -56,3 +56,81 @@ def init_db():
         title TEXT NOT NULL,
         job_type TEXT,
         experience TEXT,
+        location TEXT,
+        openings INTEGER DEFAULT 1,
+        salary TEXT,
+        description TEXT,
+        requirements TEXT,
+        skills TEXT,
+        perks TEXT,
+        status TEXT DEFAULT 'Active',
+        posted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies (id)
+    )''')
+
+    # Applications Table
+    c.execute('''CREATE TABLE IF NOT EXISTS applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        candidate_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'Applied',
+        applied_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (job_id) REFERENCES jobs (id),
+        FOREIGN KEY (candidate_id) REFERENCES candidates (id)
+    )''')
+
+    # Saved Jobs Table
+    c.execute('''CREATE TABLE IF NOT EXISTS saved_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        candidate_id INTEGER NOT NULL,
+        saved_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (job_id) REFERENCES jobs (id),
+        FOREIGN KEY (candidate_id) REFERENCES candidates (id)
+    )''')
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# ==================== HOME & JOB LISTING ====================
+@app.route('/')
+def index():
+    conn = sqlite3.connect('surejob.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''SELECT j.*, c.company_name, c.logo as company_logo
+                 FROM jobs j JOIN companies c ON j.company_id = c.id
+                 WHERE j.status = 'Active' ORDER BY j.id DESC LIMIT 6''')
+    jobs = c.fetchall()
+    conn.close()
+    return render_template('index.html', jobs=jobs)
+
+@app.route('/jobs')
+def jobs():
+    conn = sqlite3.connect('surejob.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''SELECT j.*, c.company_name, c.logo as company_logo
+                 FROM jobs j JOIN companies c ON j.company_id = c.id
+                 WHERE j.status = 'Active' ORDER BY j.id DESC''')
+    jobs = c.fetchall()
+    conn.close()
+    return render_template('jobs.html', jobs=jobs)
+
+@app.route('/job/<int:job_id>')
+def job_detail(job_id):
+    conn = sqlite3.connect('surejob.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('''SELECT j.*, c.company_name, c.logo as company_logo, c.id as company_id
+                 FROM jobs j JOIN companies c ON j.company_id = c.id
+                 WHERE j.id =?''', (job_id,))
+    job = c.fetchone()
+    conn.close()
+    if not job:
+        return "Job not found", 404
+
+    already_applied = False
+    if 'candidate_id' in session:
