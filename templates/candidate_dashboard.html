@@ -1,45 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body">
-                <h3 class="text-center mb-4">Create Your Resume</h3>
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Full Name</label>
-                            <input type="text" name="full_name" class="form-control" value="{{ candidate.full_name }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Email</label>
-                            <input type="email" name="email" class="form-control" value="{{ candidate.email }}" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Phone</label>
-                        <input type="text" name="phone" class="form-control" value="{{ candidate.mobile }}">
-                    </div>
-                    <div class="mb-3">
-                        <label>Professional Summary</label>
-                        <textarea name="summary" class="form-control" rows="3" placeholder="2-3 lines about yourself"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label>Education</label>
-                        <textarea name="education" class="form-control" rows="3" placeholder="B.Tech CSE - XYZ University - 2024"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label>Experience</label>
-                        <textarea name="experience" class="form-control" rows="3" placeholder="Software Intern - ABC Corp - 6 months"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label>Skills</label>
-                        <textarea name="skills" class="form-control" rows="2" placeholder="Python, Flask, JavaScript, SQL"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Generate Resume PDF</button>
-                </form>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Welcome, {{ candidate.full_name }}</h3>
+    <a href="{{ url_for('create_resume') }}" class="btn btn-outline-primary">Create Resume</a>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Your Profile</h5>
+        <p><strong>Email:</strong> {{ candidate.email }}</p>
+        <p><strong>Mobile:</strong> {{ candidate.mobile }}</p>
+        <p><strong>Resume:</strong>
+            {% if candidate.resume %}
+                <a href="{{ url_for('download_resume', candidate_id=candidate.id) }}" target="_blank">View Resume</a>
+            {% else %}
+                <span class="text-danger">Not Uploaded</span>
+            {% endif %}
+        </p>
     </div>
+</div>
+<h4>Your Applications</h4>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Company</th>
+                <th>Location</th>
+                <th>Applied On</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in applications %}
+            <tr>
+                <td>{{ app.title }}</td>
+                <td>{{ app.company_name }}</td>
+                <td>{{ app.location }}</td>
+                <td>{{ app.applied_on.split()[0] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center">You haven't applied to any jobs yet</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}
