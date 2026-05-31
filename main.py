@@ -22,7 +22,6 @@ def init_db():
     conn = sqlite3.connect('surejob.db')
     c = conn.cursor()
 
-    # Companies Table
     c.execute('''CREATE TABLE IF NOT EXISTS companies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         company_name TEXT NOT NULL,
@@ -38,7 +37,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Candidates Table
     c.execute('''CREATE TABLE IF NOT EXISTS candidates (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -49,7 +47,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Jobs Table
     c.execute('''CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         company_id INTEGER NOT NULL,
@@ -68,7 +65,6 @@ def init_db():
         FOREIGN KEY (company_id) REFERENCES companies (id)
     )''')
 
-    # Applications Table
     c.execute('''CREATE TABLE IF NOT EXISTS applications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         job_id INTEGER NOT NULL,
@@ -79,7 +75,6 @@ def init_db():
         FOREIGN KEY (candidate_id) REFERENCES candidates (id)
     )''')
 
-    # Saved Jobs Table
     c.execute('''CREATE TABLE IF NOT EXISTS saved_jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         job_id INTEGER NOT NULL,
@@ -142,3 +137,80 @@ def job_detail(job_id):
         conn2.close()
 
     return render_template('job_detail.html', job=job, already_applied=already_applied)
+
+# ==================== CANDIDATE ROUTES ====================
+@app.route('/candidate-register', methods=['GET', 'POST'])
+def candidate_register():
+    if request.method == 'POST':
+        data = request.form
+        hashed_pw = generate_password_hash(data['password'])
+        conn = sqlite3.connect('surejob.db')
+        c = conn.cursor()
+        try:
+            c.execute('INSERT INTO candidates (name, email, password, phone) VALUES (?,?,?,?)',
+                     (data['name'], data['email'], hashed_pw, data.get('phone')))
+            candidate_id = c.lastrowid
+            conn.commit()
+            conn.close()
+            session['candidate_id'] = candidate_id
+            session['name'] = data['name']
+            session['email'] = data['email']
+            session['phone'] = data.get('phone')
+            session['user_type'] = 'candidate'
+            return redirect('/candidate-dashboard')
+        except sqlite3.IntegrityError:
+            conn.close()
+            return render_template('candidate_register.html', error='Email already exists')
+    return render_template('candidate_register.html')
+
+@app.route('/candidate-login', methods=['GET', 'POST'])
+def candidate_login():
+    if request.method == 'POST':
+        data = request.form
+        conn = sqlite3.connect('surejob.db')
+        c = conn.cursor()
+        c.execute('SELECT id, name, password, email, phone FROM candidates WHERE email =?', (data['email'],))
+        user = c.fetchone()
+        conn.close()
+        if user and check_password_hash(user[2], data['password']):
+            session['candidate_id'] = user[0]
+            session['name'] = user[1]
+            session['email'] = user[3]
+            session['phone'] = user[4]
+            session['user_type'] = 'candidate'
+            return redirect('/candidate-dashboard')
+        return render_template('candidate_login.html', error='Invalid credentials')
+    return render_template('candidate_login.html')
+
+@app.route('/candidate-dashboard')
+def candidate_dashboard():
+    if 'candidate_id' not in session:
+        return redirect('/candidate-login')
+    conn = sqlite3.connect('surejob.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('SELECT * FROM candidates WHERE id =?', (session['candidate_id'],))
+    user = c.fetchone()
+
+    c.execute('''SELECT a.*, j.title as job_title, j.location, c.company_name
+                 FROM applications a
+                 JOIN jobs j ON a.job_id = j.id
+                 JOIN companies c ON j.company_id = c.id
+                 WHERE a.candidate_id =? ORDER BY a.id DESC''', (session['candidate_id'],))
+    applications = c.fetchall()
+    conn.close()
+    return render_template('candidate_dashboard.html', user=user, applications=applications)
+
+@app.route('/upload-resume', methods=['POST'])
+def upload_resume():
+    if 'candidate_id' not in session:
+        return redirect('/candidate-login')
+
+    file = request.files.get('resume')
+    if not file or file.filename == '':
+        flash('No file selected', 'danger')
+        return redirect('/candidate-dashboard')
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"user_{session['candidate_id']}_{file.filename}")
+        file.save(os.path
