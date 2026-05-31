@@ -164,7 +164,7 @@ def candidate_login():
         if user:
             session['user_id'] = user['id']
             session['user_type'] = 'candidate'
-            session['name'] = user['full_name']
+            session['name'] = user['full_name'] if user['full_name'] else user['email'].split('@')[0]
             return redirect(url_for('candidate_dashboard'))
         else:
             flash('Invalid email or password', 'danger')
@@ -187,40 +187,55 @@ def candidate_dashboard():
 def create_resume():
     if 'user_id' not in session or session['user_type']!= 'candidate':
         return redirect(url_for('candidate_login'))
+
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
     conn = get_db_connection()
     candidate = conn.execute('SELECT * FROM candidates WHERE id =?', (session['user_id'],)).fetchone()
+
     if request.method == 'POST':
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(50, height - 50, request.form.get('full_name'))
-        p.setFont("Helvetica", 10)
-        p.drawString(50, height - 70, f"Email: {request.form.get('email')} | Phone: {request.form.get('phone')}")
-        y = height - 120
-        sections = [("Summary", request.form.get('summary')), ("Education", request.form.get('education')),
-                    ("Experience", request.form.get('experience')), ("Skills", request.form.get('skills'))]
-        for title, content in sections:
-            if content:
-                p.setFont("Helvetica-Bold", 12)
-                p.drawString(50, y, title)
-                y -= 20
-                p.setFont("Helvetica", 10)
-                for line in content.split('\n'):
-                    if y < 50: p.showPage(); y = height - 50
-                    p.drawString(50, y, line[:90])
-                    y -= 15
-                y -= 10
-        p.save()
-        buffer.seek(0)
-        filename = secure_filename(f"user_{session['user_id']}_generated.pdf")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        with open(filepath, 'wb') as f: f.write(buffer.getvalue())
-        conn.execute('UPDATE candidates SET resume =? WHERE id =?', (filename, session['user_id']))
-        conn.commit()
-        conn.close()
-        flash('Resume created successfully!', 'success')
-        return redirect(url_for('candidate_dashboard'))
+        try:
+            buffer = io.BytesIO()
+            p = canvas.Canvas(buffer, pagesize=letter)
+            width, height = letter
+
+            full_name = request.form.get('full_name') or 'Candidate'
+            email = request.form.get('email') or ''
+            phone = request.form.get('phone') or ''
+
+            p.setFont("Helvetica-Bold", 16)
+            p.drawString(50, height - 50, full_name)
+            p.setFont("Helvetica", 10)
+            p.drawString(50, height - 70, f"Email: {email} | Phone: {phone}")
+            y = height - 120
+
+            sections = [("Summary", request.form.get('summary')), ("Education", request.form.get('education')),
+                        ("Experience", request.form.get('experience')), ("Skills", request.form.get('skills'))]
+            for title, content in sections:
+                if content:
+                    p.setFont("Helvetica-Bold", 12)
+                    p.drawString(50, y, title)
+                    y -= 20
+                    p.setFont("Helvetica", 10)
+                    for line in content.split('\n'):
+                        if y < 50: p.showPage(); y = height - 50
+                        p.drawString(50, y, line[:90])
+                        y -= 15
+                    y -= 10
+            p.save()
+            buffer.seek(0)
+            filename = secure_filename(f"user_{session['user_id']}_generated.pdf")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            with open(filepath, 'wb') as f: f.write(buffer.getvalue())
+            conn.execute('UPDATE candidates SET resume =? WHERE id =?', (filename, session['user_id']))
+            conn.commit()
+            flash('Resume created successfully!', 'success')
+            return redirect(url_for('candidate_dashboard'))
+        except Exception as e:
+            flash(f'Error creating resume: {str(e)}', 'danger')
+        finally:
+            conn.close()
+
     conn.close()
     return render_template('create_resume.html', candidate=candidate)
 
