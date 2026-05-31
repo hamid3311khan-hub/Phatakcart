@@ -134,3 +134,11 @@ def job_detail(job_id):
 
     already_applied = False
     if 'candidate_id' in session:
+        conn2 = sqlite3.connect('surejob.db')
+        c2 = conn2.cursor()
+        c2.execute('SELECT id FROM applications WHERE job_id =? AND candidate_id =?',
+                  (job_id, session['candidate_id']))
+        already_applied = c2.fetchone() is not None
+        conn2.close()
+
+    return render_template('job_detail.html', job=job, already_applied=already_applied)
