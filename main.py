@@ -1,11 +1,26 @@
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, request, render_template, redirect, url_for, session, flash, send_from_directory
 import sqlite3
+import os
+from werkzeug.utils import secure_filename
+from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import io
 
 app = Flask(__name__)
 app.secret_key = 'surejob_secret_key_123'
 
+# Resume Upload Config
+UPLOAD_FOLDER = 'static/resumes'
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def init_db():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('surejob.db')
     conn.execute('''
         CREATE TABLE IF NOT EXISTS candidates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,6 +28,7 @@ def init_db():
             password TEXT NOT NULL,
             mobile TEXT,
             full_name TEXT,
+            resume TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -35,9 +51,30 @@ def init_db():
             salary TEXT,
             job_type TEXT,
             experience TEXT,
+            openings INTEGER DEFAULT 1,
+            requirements TEXT,
+            skills TEXT,
+            perks TEXT,
             company_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            posted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (company_id) REFERENCES companies (id)
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id INTEGER,
+            candidate_id INTEGER,
+            applied_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (job_id) REFERENCES jobs (id),
+            FOREIGN KEY (candidate_id) REFERENCES candidates (id)
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
         )
     ''')
     conn.commit()
@@ -45,7 +82,7 @@ def init_db():
     print("Database initialized ✅")
 
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -54,9 +91,9 @@ def home():
     try:
         conn = get_db_connection()
         jobs = conn.execute('''
-            SELECT jobs.*, companies.company_name 
-            FROM jobs 
-            JOIN companies ON jobs.company_id = companies.id 
+            SELECT jobs.*, companies.company_name
+            FROM jobs
+            JOIN companies ON jobs.company_id = companies.id
             ORDER BY jobs.id DESC LIMIT 6
         ''').fetchall()
         conn.close()
@@ -69,9 +106,9 @@ def home():
 def jobs():
     conn = get_db_connection()
     all_jobs = conn.execute('''
-        SELECT jobs.*, companies.company_name 
-        FROM jobs 
-        JOIN companies ON jobs.company_id = companies.id 
+        SELECT jobs.*, companies.company_name
+        FROM jobs
+        JOIN companies ON jobs.company_id = companies.id
         ORDER BY jobs.id DESC
     ''').fetchall()
     conn.close()
@@ -81,13 +118,46 @@ def jobs():
 def job_detail(job_id):
     conn = get_db_connection()
     job = conn.execute('''
-        SELECT jobs.*, companies.company_name 
-        FROM jobs 
-        JOIN companies ON jobs.company_id = companies.id 
-        WHERE jobs.id = ?
+        SELECT jobs.*, companies.company_name
+        FROM jobs
+        JOIN companies ON jobs.company_id = companies.id
+        WHERE jobs.id =?
     ''', (job_id,)).fetchone()
+
+    already_applied = False
+    if 'user_id' in session and session['user_type'] == 'candidate':
+        check = conn.execute('SELECT id FROM applications WHERE job_id =? AND candidate_id =?',
+                           (job_id, session['user_id'])).fetchone()
+        already_applied = True if check else False
+
     conn.close()
-    return render_template('job_detail.html', job=job)
+    return render_template('job_detail.html', job=job, already_applied=already_applied)
+
+@app.route('/apply-job/<int:job_id>')
+def apply_job(job_id):
+    if 'user_id' not in session or session['user_type']!= 'candidate':
+        return redirect(url_for('candidate_login'))
+
+    conn = get_db_connection()
+    candidate = conn.execute('SELECT resume FROM candidates WHERE id =?', (session['user_id'],)).fetchone()
+
+    if not candidate['resume']:
+        flash('Please upload your resume before applying', 'warning')
+        conn.close()
+        return redirect(url_for('candidate_dashboard'))
+
+    existing = conn.execute('SELECT id FROM applications WHERE job_id =? AND candidate_id =?',
+                          (job_id, session['user_id'])).fetchone()
+    if existing:
+        flash('You have already applied to this job', 'info')
+    else:
+        conn.execute('INSERT INTO applications (job_id, candidate_id) VALUES (?,?)',
+                    (job_id, session['user_id']))
+        conn.commit()
+        flash('Applied successfully!', 'success')
+
+    conn.close()
+    return redirect(url_for('job_detail', job_id=job_id))
 
 @app.route('/candidate/register', methods=['GET', 'POST'])
 def candidate_register():
@@ -96,91 +166,19 @@ def candidate_register():
         password = request.form.get('password')
         mobile = request.form.get('mobile')
         full_name = request.form.get('full_name')
+
+        resume_filename = None
+        if 'resume' in request.files:
+            file = request.files['resume']
+            if file and file.filename!= '' and allowed_file(file.filename):
+                resume_filename = secure_filename(f"user_temp_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], resume_filename))
+
         conn = get_db_connection()
         try:
-            conn.execute('INSERT INTO candidates (email, password, mobile, full_name) VALUES (?, ?, ?, ?)',
-                         (email, password, mobile, full_name))
-            conn.commit()
-            return redirect(url_for('candidate_login'))
-        except sqlite3.IntegrityError:
-            return "Email already exists!"
-        finally:
-            conn.close()
-    return render_template('candidate_register.html')
+            cursor = conn.execute('INSERT INTO candidates (email, password, mobile, full_name, resume) VALUES (?,?,?,?,?)',
+                         (email, password, mobile, full_name, resume_filename))
 
-@app.route('/candidate/login', methods=['GET', 'POST'])
-def candidate_login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        conn = get_db_connection()
-        user = conn.execute('SELECT * FROM candidates WHERE email = ? AND password = ?', 
-                           (email, password)).fetchone()
-        conn.close()
-        if user:
-            session['user_id'] = user['id']
-            session['user_type'] = 'candidate'
-            session['name'] = user['full_name']
-            return redirect(url_for('candidate_dashboard'))
-        else:
-            return "Invalid email or password!"
-    return render_template('candidate_login.html')
-
-@app.route('/candidate/dashboard')
-def candidate_dashboard():
-    if 'user_id' not in session or session['user_type'] != 'candidate':
-        return redirect(url_for('candidate_login'))
-    return render_template('candidate_dashboard.html', name=session['name'])
-
-@app.route('/company/register', methods=['GET', 'POST'])
-def company_register():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        company_name = request.form.get('company_name')
-        mobile = request.form.get('mobile')
-        conn = get_db_connection()
-        try:
-            conn.execute('INSERT INTO companies (email, password, company_name, mobile) VALUES (?, ?, ?, ?)',
-                         (email, password, company_name, mobile))
-            conn.commit()
-            return redirect(url_for('company_login'))
-        except sqlite3.IntegrityError:
-            return "Email already exists!"
-        finally:
-            conn.close()
-    return render_template('company_register.html')
-
-@app.route('/company/login', methods=['GET', 'POST'])
-def company_login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        conn = get_db_connection()
-        company = conn.execute('SELECT * FROM companies WHERE email = ? AND password = ?', 
-                              (email, password)).fetchone()
-        conn.close()
-        if company:
-            session['user_id'] = company['id']
-            session['user_type'] = 'company'
-            session['name'] = company['company_name']
-            return redirect(url_for('company_dashboard'))
-        else:
-            return "Invalid email or password!"
-    return render_template('company_login.html')
-
-@app.route('/company/dashboard')
-def company_dashboard():
-    if 'user_id' not in session or session['user_type'] != 'company':
-        return redirect(url_for('company_login'))
-    return render_template('company_dashboard.html', name=session['name'])
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('home'))
-
-init_db()
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+            if resume_filename:
+                user_id = cursor.lastrowid
+                new_filename = secure_filename(f"user_{user
