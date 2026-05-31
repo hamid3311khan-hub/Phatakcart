@@ -70,6 +70,10 @@ def init_db():
     conn.close()
     print("Database initialized ✅")
 
+# YE 3 LINES ADD KI HAIN - SABSE IMPORTANT
+with app.app_context():
+    init_db()
+
 def get_db_connection():
     conn = sqlite3.connect('surejob.db')
     conn.row_factory = sqlite3.Row
@@ -273,7 +277,8 @@ def create_resume():
         return redirect(url_for('candidate_dashboard'))
 
     conn.close()
-    return render_template('create-resume.html', candidate=candidate)
+    # YAHAN CHANGE KIYA - underscore kar diya
+    return render_template('create_resume.html', candidate=candidate)
 
 @app.route('/company/register', methods=['GET', 'POST'])
 def company_register():
@@ -428,5 +433,4 @@ def logout():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
