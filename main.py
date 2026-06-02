@@ -463,6 +463,13 @@ def update_status(app_id, status):
 
 @app.route('/company/download-resume/<int:candidate_id>')
 def download_resume(candidate_id):
-    if 'user_id' not in session: return redirect(url_for('candidate_login'))
+    if 'user_id' not in session: 
+        return redirect(url_for('candidate_login'))
     conn = get_db_connection()
-    candidate = conn.execute('SELECT resume FROM candidates WHERE id =?', (candidat
+    candidate = conn.execute('SELECT resume FROM candidates WHERE id =?', (candidate_id,)).fetchone()
+    conn.close()
+    if candidate and candidate['resume']:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], candidate['resume'],
+                                 as_attachment=request.args.get('download') == '1')
+    flash('Resume not found', 'danger')
+    return redirect(request.referrer or url_for('home'))
