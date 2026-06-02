@@ -10,12 +10,19 @@ app = Flask(__name__)
 app.secret_key = 'surejob_secret_key_123'
 
 UPLOAD_FOLDER = 'static/resumes'
+LOGO_FOLDER = 'static/logos' # Feature 3 ke liye
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg'} # Feature 3
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['LOGO_FOLDER'] = LOGO_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(LOGO_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_image(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 def init_db():
     conn = sqlite3.connect('surejob.db')
@@ -34,6 +41,8 @@ def init_db():
             password TEXT NOT NULL,
             company_name TEXT,
             mobile TEXT,
+            bio TEXT, -- Feature 3
+            logo TEXT, -- Feature 3
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )''')
     conn.execute('''CREATE TABLE IF NOT EXISTS jobs (
@@ -62,9 +71,17 @@ def init_db():
             FOREIGN KEY (candidate_id) REFERENCES candidates (id)
         )''')
 
-    # Auto-migration: Render ke purane DB me status column add karo
+    # Auto-migration for old DBs
     try:
         conn.execute("ALTER TABLE applications ADD COLUMN status TEXT DEFAULT 'Pending'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE companies ADD COLUMN bio TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE companies ADD COLUMN logo TEXT")
     except sqlite3.OperationalError:
         pass
 
@@ -82,7 +99,7 @@ def get_db_connection():
 @app.route('/')
 def home():
     conn = get_db_connection()
-    jobs = conn.execute('''SELECT jobs.*, companies.company_name
+    jobs = conn.execute('''SELECT jobs.*, companies.company_name, companies.logo
         FROM jobs JOIN companies ON jobs.company_id = companies.id
         ORDER BY jobs.id DESC LIMIT 6''').fetchall()
     conn.close()
@@ -95,7 +112,7 @@ def jobs():
     job_type = request.args.get('job_type', '')
 
     conn = get_db_connection()
-    query = '''SELECT jobs.*, companies.company_name
+    query = '''SELECT jobs.*, companies.company_name, companies.logo
                FROM jobs
                JOIN companies ON jobs.company_id = companies.id
                WHERE 1=1'''
@@ -122,7 +139,7 @@ def jobs():
 @app.route('/job/<int:job_id>')
 def job_detail(job_id):
     conn = get_db_connection()
-    job = conn.execute('''SELECT jobs.*, companies.company_name
+    job = conn.execute('''SELECT jobs.*, companies.company_name, companies.logo
         FROM jobs JOIN companies ON jobs.company_id = companies.id
         WHERE jobs.id =?''', (job_id,)).fetchone()
     already_applied = False
@@ -195,23 +212,40 @@ def candidate_login():
             session['user_id'] = user['id']
             session['user_type'] = 'candidate'
             session['name'] = user['full_name'] if user['full_name'] else user['email'].split('@')[0]
-            return redirect(url_for('candidate_dashboard'))
+            return redirect(url_for('dashboard')) # FIXED: /dashboard pe bhejo
         else:
             flash('Invalid email or password', 'danger')
     return render_template('candidate_login.html')
 
+# FIXED: Central dashboard route
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('home'))
+
+    conn = get_db_connection()
+    if session['user_type'] == 'company':
+        company = conn.execute('SELECT * FROM companies WHERE id =?', (session['user_id'],)).fetchone()
+        jobs = conn.execute('SELECT * FROM jobs WHERE company_id =? ORDER BY id DESC',
+                           (session['user_id'],)).fetchall()
+        total_jobs = len(jobs)
+        total_apps = conn.execute('''SELECT COUNT(*) as count FROM applications
+            JOIN jobs ON applications.job_id = jobs.id WHERE jobs.company_id =?''',
+            (session['user_id'],)).fetchone()['count']
+        conn.close()
+        return render_template('company_dashboard.html', company=company, jobs=jobs, total_jobs=total_jobs, total_apps=total_apps)
+    else:
+        candidate = conn.execute('SELECT * FROM candidates WHERE id =?', (session['user_id'],)).fetchone()
+        applications = conn.execute('''SELECT applications.*, jobs.title, jobs.location, companies.company_name
+            FROM applications JOIN jobs ON applications.job_id = jobs.id
+            JOIN companies ON jobs.company_id = companies.id
+            WHERE applications.candidate_id =? ORDER BY applications.id DESC''', (session['user_id'],)).fetchall()
+        conn.close()
+        return render_template('candidate_dashboard.html', candidate=candidate, applications=applications)
+
 @app.route('/candidate/dashboard')
 def candidate_dashboard():
-    if 'user_id' not in session or session['user_type']!= 'candidate':
-        return redirect(url_for('candidate_login'))
-    conn = get_db_connection()
-    candidate = conn.execute('SELECT * FROM candidates WHERE id =?', (session['user_id'],)).fetchone()
-    applications = conn.execute('''SELECT applications.*, jobs.title, jobs.location, companies.company_name
-        FROM applications JOIN jobs ON applications.job_id = jobs.id
-        JOIN companies ON jobs.company_id = companies.id
-        WHERE applications.candidate_id =? ORDER BY applications.id DESC''', (session['user_id'],)).fetchall()
-    conn.close()
-    return render_template('candidate_dashboard.html', candidate=candidate, applications=applications)
+    return redirect(url_for('dashboard')) # FIXED: redirect to central route
 
 @app.route('/candidate/create-resume', methods=['GET', 'POST'])
 def create_resume():
@@ -260,7 +294,7 @@ def create_resume():
             conn.execute('UPDATE candidates SET resume =? WHERE id =?', (filename, session['user_id']))
             conn.commit()
             flash('Resume created successfully!', 'success')
-            return redirect(url_for('candidate_dashboard'))
+            return redirect(url_for('dashboard'))
         except Exception as e:
             flash(f'Error creating resume: {str(e)}', 'danger')
         finally:
@@ -276,12 +310,12 @@ def upload_resume():
 
     if 'resume' not in request.files:
         flash('No file selected', 'danger')
-        return redirect(url_for('candidate_dashboard'))
+        return redirect(url_for('dashboard'))
 
     file = request.files['resume']
     if file.filename == '':
         flash('No file selected', 'danger')
-        return redirect(url_for('candidate_dashboard'))
+        return redirect(url_for('dashboard'))
 
     if file and allowed_file(file.filename):
         filename = secure_filename(f"user_{session['user_id']}_{file.filename}")
@@ -294,7 +328,7 @@ def upload_resume():
     else:
         flash('Invalid file. Only PDF, DOC, DOCX allowed', 'danger')
 
-    return redirect(url_for('candidate_dashboard'))
+    return redirect(url_for('dashboard'))
 
 @app.route('/company/register', methods=['GET', 'POST'])
 def company_register():
@@ -329,34 +363,57 @@ def company_login():
             session['user_id'] = user['id']
             session['user_type'] = 'company'
             session['name'] = user['company_name']
-            return redirect(url_for('company_dashboard'))
+            return redirect(url_for('dashboard')) # FIXED
         else:
             flash('Invalid email or password', 'danger')
     return render_template('company_login.html')
 
 @app.route('/company/dashboard')
 def company_dashboard():
+    return redirect(url_for('dashboard')) # FIXED
+
+# Feature 3: Company Profile
+@app.route('/company/profile', methods=['GET', 'POST'])
+def company_profile():
     if 'user_id' not in session or session['user_type']!= 'company':
         return redirect(url_for('company_login'))
+
     conn = get_db_connection()
-    jobs = conn.execute('SELECT * FROM jobs WHERE company_id =? ORDER BY id DESC',
-                       (session['user_id'],)).fetchall()
-    total_jobs = len(jobs)
-    total_apps = conn.execute('''SELECT COUNT(*) as count FROM applications
-        JOIN jobs ON applications.job_id = jobs.id WHERE jobs.company_id =?''',
-        (session['user_id'],)).fetchone()['count']
+    if request.method == 'POST':
+        bio = request.form.get('bio')
+        company_name = request.form.get('company_name')
+        mobile = request.form.get('mobile')
+
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename!= '' and allowed_image(file.filename):
+                logo_filename = secure_filename(f"company_{session['user_id']}_{file.filename}")
+                file.save(os.path.join(app.config['LOGO_FOLDER'], logo_filename))
+                conn.execute('UPDATE companies SET bio =?, company_name =?, mobile =?, logo =? WHERE id =?',
+                           (bio, company_name, mobile, logo_filename, session['user_id']))
+            else:
+                conn.execute('UPDATE companies SET bio =?, company_name =?, mobile =? WHERE id =?',
+                           (bio, company_name, mobile, session['user_id']))
+        else:
+            conn.execute('UPDATE companies SET bio =?, company_name =?, mobile =? WHERE id =?',
+                       (bio, company_name, mobile, session['user_id']))
+        conn.commit()
+        flash('Profile updated successfully!', 'success')
+
+    company = conn.execute('SELECT * FROM companies WHERE id =?', (session['user_id'],)).fetchone()
     conn.close()
-    return render_template('company_dashboard.html', jobs=jobs, total_jobs=total_jobs, total_apps=total_apps)
+    return render_template('company_profile.html', company=company)
 
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
-    if 'user_id' not in session or session['user_type']!= 'company':
-        return redirect(url_for('company_login'))
+    if 'user_id' not in session or session['user_type']!= 'company': # SECURITY FIX
+        flash('Only companies can post jobs', 'danger')
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         conn = get_db_connection()
         conn.execute('''INSERT INTO jobs (title, description, location, salary, job_type, experience,
                             openings, requirements, skills, perks, company_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (
+            VALUES (?,?,?,?,?,?,?)''', (
             request.form.get('title'), request.form.get('description'), request.form.get('location'),
             request.form.get('salary'), request.form.get('job_type'), request.form.get('experience'),
             request.form.get('openings'), request.form.get('requirements'), request.form.get('skills'),
@@ -364,7 +421,7 @@ def post_job():
         conn.commit()
         conn.close()
         flash('Job posted successfully!', 'success')
-        return redirect(url_for('company_dashboard'))
+        return redirect(url_for('dashboard'))
     return render_template('post_job.html')
 
 @app.route('/job-applications/<int:job_id>')
@@ -376,7 +433,7 @@ def job_applications(job_id):
                       (job_id, session['user_id'])).fetchone()
     if not job:
         flash('Job not found', 'danger')
-        return redirect(url_for('company_dashboard'))
+        return redirect(url_for('dashboard'))
     applications = conn.execute('''SELECT applications.*, candidates.full_name, candidates.email, candidates.mobile, candidates.resume
         FROM applications JOIN candidates ON applications.candidate_id = candidates.id
         WHERE applications.job_id =? ORDER BY applications.id DESC''', (job_id,)).fetchall()
@@ -402,24 +459,10 @@ def update_status(app_id, status):
         flash('Invalid request', 'danger')
 
     conn.close()
-    return redirect(request.referrer or url_for('company_dashboard'))
+    return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/company/download-resume/<int:candidate_id>')
 def download_resume(candidate_id):
     if 'user_id' not in session: return redirect(url_for('candidate_login'))
     conn = get_db_connection()
-    candidate = conn.execute('SELECT resume FROM candidates WHERE id =?', (candidate_id,)).fetchone()
-    conn.close()
-    if candidate and candidate['resume']:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], candidate['resume'],
-                                 as_attachment=request.args.get('download')=='1')
-    flash('Resume not found', 'danger')
-    return redirect(request.referrer or url_for('home'))
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('home'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    candidate = conn.execute('SELECT resume FROM candidates WHERE id =?', (candidat
