@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-center mb-4">Edit Company Profile</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="text-center mb-4">
+                        {% if company.logo %}
+                            <img src="{{ url_for('static', filename='logos/' + company.logo) }}" alt="Logo" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #dee2e6;">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="fas fa-building text-white fa-2x"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <label class="form-label"><strong>Upload Company Logo</strong></label>
+                            <input type="file" name="logo" class="form-control form-control-sm" accept=".png,.jpg,.jpeg">
+                            <small class="text-muted">PNG, JPG only. Max 2MB. Upload karne se purana logo replace ho jayega.</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" name="company_name" class="form-control" value="{{ company.company_name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" value="{{ company.email }}" disabled>
+                        <small class="text-muted">Email cannot be changed</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" name="mobile" class="form-control" value="{{ company.mobile }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">About Company / Bio</label>
+                        <textarea name="bio" class="form-control" rows="4" placeholder="Tell candidates about your company, culture, mission...">{{ company.bio if company.bio else '' }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
