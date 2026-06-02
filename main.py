@@ -25,77 +25,80 @@ def allowed_image(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 def init_db():
-    conn = sqlite3.connect('surejob.db')
-    conn.execute('''CREATE TABLE IF NOT EXISTS candidates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            mobile TEXT,
-            full_name TEXT,
-            resume TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
+
+def init_db():
+    conn = get_db_connection()
+    
+    # Companies table
     conn.execute('''CREATE TABLE IF NOT EXISTS companies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            company_name TEXT,
-            mobile TEXT,
-            bio TEXT, -- Feature 3
-            logo TEXT, -- Feature 3
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        company_name TEXT NOT NULL,
+        mobile TEXT,
+        logo TEXT,
+        bio TEXT
+    )''')
+    
+    # Candidates table
+    conn.execute('''CREATE TABLE IF NOT EXISTS candidates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        mobile TEXT,
+        resume TEXT
+    )''')
+    
+    # Jobs table
     conn.execute('''CREATE TABLE IF NOT EXISTS jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            location TEXT,
-            salary TEXT,
-            job_type TEXT,
-            experience TEXT,
-            openings INTEGER DEFAULT 1,
-            requirements TEXT,
-            skills TEXT,
-            perks TEXT,
-            company_id INTEGER,
-            posted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (company_id) REFERENCES companies (id)
-        )''')
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER,
+        title TEXT,
+        description TEXT,
+        requirements TEXT,
+        salary TEXT,
+        location TEXT,
+        job_type TEXT,
+        experience TEXT,
+        skills TEXT,
+        perks TEXT,
+        openings INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies (id)
+    )''')
+    
+    # Applications table
     conn.execute('''CREATE TABLE IF NOT EXISTS applications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id INTEGER,
-            candidate_id INTEGER,
-            status TEXT DEFAULT 'Pending',
-            applied_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (job_id) REFERENCES jobs (id),
-            FOREIGN KEY (candidate_id) REFERENCES candidates (id)
-        )''')
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER,
+        candidate_id INTEGER,
+        status TEXT DEFAULT 'Pending',
+        applied_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (job_id) REFERENCES jobs (id),
+        FOREIGN KEY (candidate_id) REFERENCES candidates (id)
+    )''')
 
-    # Auto-migration for old DBs
+    # Purane DB me columns add karo agar nahi hain
     try:
-        conn.execute("ALTER TABLE applications ADD COLUMN status TEXT DEFAULT 'Pending'")
-    except sqlite3.OperationalError:
+        conn.execute('ALTER TABLE companies ADD COLUMN logo TEXT')
+    except: 
+        pass  # Column already exists
+    try:
+        conn.execute('ALTER TABLE companies ADD COLUMN bio TEXT')
+    except: 
         pass
     try:
-        conn.execute("ALTER TABLE companies ADD COLUMN bio TEXT")
-    except sqlite3.OperationalError:
+        conn.execute('ALTER TABLE applications ADD COLUMN status TEXT DEFAULT "Pending"')
+    except: 
         pass
-    try:
-        conn.execute("ALTER TABLE companies ADD COLUMN logo TEXT")
-    except sqlite3.OperationalError:
-        pass
-
+    
     conn.commit()
     conn.close()
-
-with app.app_context():
-    init_db()
-
-def get_db_connection():
-    conn = sqlite3.connect('surejob.db')
-    conn.row_factory = sqlite3.Row
-    return conn
-
+    
+    # logos folder banao agar nahi hai
+    if not os.path.exists('static/logos'):
+        os.makedirs('static/logos')
 @app.route('/')
 def home():
     conn = get_db_connection()
