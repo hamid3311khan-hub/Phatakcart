@@ -47,31 +47,11 @@
 
 <h4>Your Posted Jobs</h4>
 <div class="table-responsive">
-    <table class="table">
+    <table class="table table-hover">
         <thead>
             <tr>
                 <th>Job Title</th>
                 <th>Location</th>
                 <th>Type</th>
                 <th>Applications</th>
-                <th>Posted Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for job in jobs %}
-            <tr>
-                <td>{{ job.title }}</td>
-                <td>{{ job.location }}</td>
-                <td>{{ job.job_type }}</td>
-                <td>
-                    <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-primary btn-sm">View</a>
-                </td>
-                <td>{{ job.created_at.split()[0] if job.created_at else '' }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-center">No jobs posted yet</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
+                <th>Posted Date
