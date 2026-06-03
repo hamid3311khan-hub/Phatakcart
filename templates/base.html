@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SureJob</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand text-primary fw-bold" href="{{ url_for('home') }}">SureJob</a>
+            <a class="navbar-brand text-primary fw-bold" href="{{ url_for('index') }}">SureJob</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav ms-auto">
                     {% if session.user_id %}
-                        {% if session.user_type == 'candidate' %}
+                        {% if session.role == 'candidate' %}
                             <a class="nav-link" href="{{ url_for('candidate_dashboard') }}">Dashboard</a>
-                        {% elif session.user_type == 'company' %}
+                        {% elif session.role == 'company' %}
                             <a class="nav-link" href="{{ url_for('company_dashboard') }}">Dashboard</a>
                         {% endif %}
                         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
                     {% else %}
-                        <a class="nav-link" href="{{ url_for('candidate_login') }}">Candidate Login</a>
-                        <a class="nav-link" href="{{ url_for('company_login') }}">Company Login</a>
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
                     {% endif %}
                 </div>
             </div>
@@ -35,7 +35,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
