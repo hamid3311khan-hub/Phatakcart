@@ -54,4 +54,38 @@
                 <th>Location</th>
                 <th>Type</th>
                 <th>Applications</th>
-                <th>Posted Date
+                <th>Posted Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td><strong>{{ job.title }}</strong></td>
+                <td>{{ job.location }}</td>
+                <td><span class="badge bg-info">{{ job.job_type }}</span></td>
+                <td>
+                    <a href="{{ url_for('job_applications', job_id=job.id) }}" class="btn btn-primary btn-sm">
+                        View <span class="badge bg-light text-dark">{{ job.app_count if job.app_count else 0 }}</span>
+                    </a>
+                </td>
+                <td>{{ job.created_at.split()[0] if job.created_at else '' }}</td>
+                <td>
+                    <a href="{{ url_for('job_bp.edit_job', job_id=job.id) }}"
+                       class="btn btn-warning btn-sm me-1">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{{ url_for('job_bp.delete_job', job_id=job.id) }}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete {{ job.title }}? This cannot be undone.')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center py-4">No jobs posted yet</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
