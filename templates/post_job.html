@@ -1,63 +1,33 @@
 {% extends "base.html" %}
+{% block title %}Post New Job{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white"><h4 class="mb-0">Post a New Job</h4></div>
             <div class="card-body">
-                <h3 class="text-center mb-4">Post New Job</h3>
-                <form method="POST">
+                <form method="POST" action="{{ url_for('job.post_job') }}">
+                    <div class="mb-3"><label class="form-label">Job Title <span class="text-danger">*</span></label><input type="text" name="title" class="form-control" placeholder="e.g. Python Developer, Sales Executive" required></div>
+                    <div class="mb-3"><label class="form-label">Job Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="5" placeholder="Describe the role, responsibilities, requirements" required></textarea></div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Job Title</label>
-                            <input type="text" name="title" class="form-control" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Location</label>
-                            <input type="text" name="location" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Job Description</label>
-                        <textarea name="description" class="form-control" rows="4" required></textarea>
+                        <div class="col-md-6 mb-3"><label class="form-label">Location <span class="text-danger">*</span></label><input type="text" name="location" class="form-control" placeholder="Delhi, Remote, Bangalore" required></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Salary <span class="text-danger">*</span></label><input type="text" name="salary" class="form-control" placeholder="5-8 LPA, 50K per month" required></div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label>Salary</label>
-                            <input type="text" name="salary" class="form-control" placeholder="₹5-8 LPA">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label>Job Type</label>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Job Type <span class="text-danger">*</span></label>
                             <select name="job_type" class="form-select" required>
                                 <option value="Full-time">Full-time</option>
                                 <option value="Part-time">Part-time</option>
-                                <option value="Internship">Internship</option>
+                                <option value="Contract">Contract</option>
                                 <option value="Remote">Remote</option>
+                                <option value="Internship">Internship</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label>Experience</label>
-                            <input type="text" name="experience" class="form-control" placeholder="2-3 Years">
-                        </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Experience Required</label><input type="text" name="experience_required" class="form-control" placeholder="2-5 years, Fresher, 0-1 year"></div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Openings</label>
-                            <input type="number" name="openings" class="form-control" value="1" min="1">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Skills</label>
-                            <input type="text" name="skills" class="form-control" placeholder="Python, Flask, SQL">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Requirements</label>
-                        <textarea name="requirements" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label>Perks</label>
-                        <input type="text" name="perks" class="form-control" placeholder="Health Insurance, Flexible Hours">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Post Job</button>
+                    <div class="mb-3"><label class="form-label">Skills Required</label><input type="text" name="skills_required" class="form-control" placeholder="Python, Django, React, Communication, Sales"></div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg"><i class="bi bi-check-circle"></i> Post Job</button>
                 </form>
             </div>
         </div>
