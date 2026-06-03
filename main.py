@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import io
-
+from job_routes import job_bp
 app = Flask(__name__)
 app.secret_key = 'surejob_secret_key_123'
 
