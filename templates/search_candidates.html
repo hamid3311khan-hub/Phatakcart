@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Search Candidates - Shine Style{% endblock %}
+{% block title %}Search Candidates{% endblock %}
 {% block content %}
 <h2><i class="bi bi-search"></i> Search Candidates</h2>
-<p class="text-muted">Find the perfect candidate with Shine.com style advanced filters</p>
+<p class="text-muted">Find the perfect candidate with advanced filters</p>
 
 <form method="GET" class="row g-2 mb-4 p-3 bg-light rounded shadow-sm">
     <div class="col-md-3"><input type="text" name="keyword" class="form-control" placeholder="Keyword: Name, About" value="{{ request.args.get('keyword','') }}"></div>
