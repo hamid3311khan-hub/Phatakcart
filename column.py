@@ -47,7 +47,7 @@ def candidate_dashboard():
     c.execute('''SELECT a.*, j.title, j.location, u.name as company_name
                  FROM applications a JOIN jobs j ON a.job_id = j.id
                  JOIN users u ON j.company_id = u.id
-                 WHERE a.candidate_id = %s ORDER BY a.applied_at DESC''', (session['user_id'],))
+                 WHERE a.candidate_id = %s ORDER BY a.id DESC''', (session['user_id'],))
     apps = c.fetchall()
     c.execute('''SELECT s.*, j.title, j.location, u.name as company_name FROM saved_jobs s
                  JOIN jobs j ON s.job_id = j.id JOIN users u ON j.company_id = u.id
@@ -62,7 +62,7 @@ def candidate_dashboard():
 def company_dashboard():
     db = get_db()
     c = db.cursor()
-    c.execute("SELECT * FROM jobs WHERE company_id = %s ORDER BY created_at DESC", (session['user_id'],))
+    c.execute("SELECT * FROM jobs WHERE company_id = %s ORDER BY id DESC", (session['user_id'],))
     jobs = c.fetchall()
     c.execute("SELECT COUNT(*) FROM applications a JOIN jobs j ON a.job_id = j.id WHERE j.company_id = %s", (session['user_id'],))
     total_apps = c.fetchone()['count']
@@ -82,7 +82,7 @@ def job_applications(job_id):
         flash('Job not found', 'error')
         return redirect(url_for('column.company_dashboard'))
     c.execute('''SELECT a.*, u.name, u.email, u.skills, u.experience, u.location, u.phone, u.education FROM applications a
-                 JOIN users u ON a.candidate_id = u.id WHERE a.job_id = %s ORDER BY a.applied_at DESC''', (job_id,))
+                 JOIN users u ON a.candidate_id = u.id WHERE a.job_id = %s ORDER BY a.id DESC''', (job_id,))
     apps = c.fetchall()
     c.close()
     return render_template('job_applications.html', job=job, applications=apps)
@@ -124,7 +124,7 @@ def search_candidates():
         for skill in [s.strip() for s in skills.split(',')]:
             query += " AND skills ILIKE %s"; params.append(f'%{skill}%')
 
-    query += " ORDER BY created_at DESC"
+    query += " ORDER BY id DESC"
     db = get_db()
     c = db.cursor()
     c.execute(query, params)
@@ -157,9 +157,9 @@ def admin_dashboard():
         'total_applications': total_applications
     }
     
-    c.execute("SELECT j.*, u.name as company_name FROM jobs j JOIN users u ON j.company_id = u.id ORDER BY j.created_at DESC")
+    c.execute("SELECT j.*, u.name as company_name FROM jobs j JOIN users u ON j.company_id = u.id ORDER BY j.id DESC")
     jobs = c.fetchall()
-    c.execute("SELECT * FROM users WHERE role != 'admin' ORDER BY created_at DESC LIMIT 20")
+    c.execute("SELECT * FROM users WHERE role != 'admin' ORDER BY id DESC LIMIT 20")
     users = c.fetchall()
     c.close()
     return render_template('admin.html', stats=stats, jobs=jobs, users=users)
