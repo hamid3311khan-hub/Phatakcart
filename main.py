@@ -137,25 +137,22 @@ def logout():
     session.clear()
     flash('Logged out successfully', 'success')
     return redirect(url_for('index'))
-# app.py me add kar de
-@app.route('/admin-rahul-123')  # Ye secret URL hai, kisi ko mat batana
+
+@app.route('/admin-rahul-123')
 def admin_panel():
-    companies = Company.query.all()
-    students = Student.query.all()
-    jobs = Job.query.all()
+    db = get_db()
+    companies = db.execute("SELECT * FROM users WHERE role='company'").fetchall()
+    students = db.execute("SELECT * FROM users WHERE role='candidate'").fetchall()
+    jobs = db.execute("SELECT * FROM jobs").fetchall()
     
-    return f'''
-    <h1>Admin Panel</h1>
-    <h2>Companies: {len(companies)}</h2>
-    {'<br>'.join([f'ID: {c.id} | {c.name} | {c.email} | Pass: {c.password}' for c in companies])}
+    html = '<h1>Admin Panel</h1>'
+    html += f'<h2>Companies: {len(companies)}</h2>'
+    for c in companies:
+        html += f'ID: {c["id"]} | {c["name"]} | {c["email"]} | Hash: {c["password"][:20]}...<br>'
     
-    <h2>Students: {len(students)}</h2>
-    {len(students)} registered
-    
-    <h2>Jobs: {len(jobs)}</h2>
-    {len(jobs)} posted
-    <br><br>
-    <b>Note:</b> Ye temporary admin hai. Baad me proper bana denge.
-    '''
+    html += f'<h2>Students: {len(students)}</h2>{len(students)} registered<br>'
+    html += f'<h2>Jobs: {len(jobs)}</h2>{len(jobs)} posted<br>'
+    html += '<br><b>Note:</b> Password hash me hai, seedha nahi dikhega. Reset karna padega.'
+    return html
 if __name__ == '__main__':
     app.run(debug=True)
