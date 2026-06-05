@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from functools import wraps
 import os
 
-job_bp = Blueprint('job', __name__)
+job_bp = Blueprint('jobs', __name__)
 
 def get_db():
     if 'db' not in g:
@@ -23,74 +23,49 @@ def login_required(f):
 def company_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('role')!= 'company':
+        if session.get('role') != 'company':
             flash('Access denied', 'error')
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
 @job_bp.route('/jobs')
-def jobs():
+def job_list():
     keyword = request.args.get('keyword', '')
     location = request.args.get('location', '')
     job_type = request.args.get('job_type', '')
-    experience = request.args.get('experience', '')
     salary = request.args.get('salary', '')
-
+    
     query = "SELECT j.*, u.name as company_name FROM jobs j JOIN users u ON j.company_id = u.id WHERE 1=1"
     params = []
-
-    if keyword:
-        query += " AND (j.title ILIKE %s OR j.description ILIKE %s OR j.skills_required ILIKE %s)"
-        params.extend([f'%{keyword}%', f'%{keyword}%', f'%{keyword}%'])
+    
+    if keyword: query += " AND (j.title ILIKE %s OR j.description ILIKE %s OR j.skills_required ILIKE %s)"; params.extend([f'%{keyword}%']*3)
     if location: query += " AND j.location ILIKE %s"; params.append(f'%{location}%')
     if job_type: query += " AND j.job_type = %s"; params.append(job_type)
-    if experience: query += " AND j.experience_required ILIKE %s"; params.append(f'%{experience}%')
     if salary: query += " AND j.salary ILIKE %s"; params.append(f'%{salary}%')
-
-    query += " ORDER BY j.created_at DESC"
+    
+    query += " ORDER BY j.id DESC"
     db = get_db()
     c = db.cursor()
     c.execute(query, params)
-    all_jobs = c.fetchall()
-
-    saved_job_ids = []
-    if 'user_id' in session and session['role'] == 'candidate':
-        c.execute("SELECT job_id FROM saved_jobs WHERE candidate_id = %s", (session['user_id'],))
-        saved = c.fetchall()
-        saved_job_ids = [s['job_id'] for s in saved]
-    
+    jobs = c.fetchall()
     c.close()
-    return render_template('jobs.html', jobs=all_jobs, saved_job_ids=saved_job_ids)
+    return render_template('jobs.html', jobs=jobs)
 
 @job_bp.route('/job/<int:job_id>')
 def job_detail(job_id):
     db = get_db()
     c = db.cursor()
-    c.execute("SELECT j.*, u.name as company_name, u.email as company_email FROM jobs j JOIN users u ON j.company_id = u.id WHERE j.id = %s", (job_id,))
+    c.execute("SELECT j.*, u.name as company_name, u.about as company_about FROM jobs j JOIN users u ON j.company_id = u.id WHERE j.id = %s", (job_id,))
     job = c.fetchone()
-    
-    if not job:
-        c.close()
-        flash('Job not found', 'error')
-        return redirect(url_for('job.jobs'))
-
-    applied, saved = False, False
-    if 'user_id' in session and session['role'] == 'candidate':
-        c.execute("SELECT id FROM applications WHERE job_id = %s AND candidate_id = %s", (job_id, session['user_id']))
-        applied = c.fetchone() is not None
-        c.execute("SELECT id FROM saved_jobs WHERE job_id = %s AND candidate_id = %s", (job_id, session['user_id']))
-        saved = c.fetchone() is not None
-    
     c.close()
-    return render_template('job_detail.html', job=job, applied=applied, saved=saved)
+    if not job: return redirect(url_for('jobs.job_list'))
+    return render_template('job_detail.html', job=job)
 
 @job_bp.route('/apply/<int:job_id>', methods=['POST'])
 @login_required
 def apply_job(job_id):
-    if session['role']!= 'candidate':
-        flash('Only candidates can apply', 'error')
-        return redirect(url_for('job.job_detail', job_id=job_id))
+    if session['role'] != 'candidate': return redirect(url_for('index'))
     db = get_db()
     c = db.cursor()
     try:
@@ -99,15 +74,15 @@ def apply_job(job_id):
         flash('Applied successfully!', 'success')
     except psycopg2.IntegrityError:
         db.rollback()
-        flash('Already applied to this job', 'error')
+        flash('Already applied', 'error')
     finally:
         c.close()
-    return redirect(url_for('job.job_detail', job_id=job_id))
+    return redirect(url_for('jobs.job_detail', job_id=job_id))
 
 @job_bp.route('/save-job/<int:job_id>', methods=['POST'])
 @login_required
 def save_job(job_id):
-    if session['role']!= 'candidate': return redirect(url_for('index'))
+    if session['role'] != 'candidate': return redirect(url_for('index'))
     db = get_db()
     c = db.cursor()
     try:
@@ -116,12 +91,10 @@ def save_job(job_id):
         flash('Job saved!', 'success')
     except psycopg2.IntegrityError:
         db.rollback()
-        c.execute("DELETE FROM saved_jobs WHERE candidate_id = %s AND job_id = %s", (session['user_id'], job_id))
-        db.commit()
-        flash('Job unsaved', 'info')
+        flash('Already saved', 'error')
     finally:
         c.close()
-    return redirect(request.referrer or url_for('job.jobs'))
+    return redirect(url_for('jobs.job_detail', job_id=job_id))
 
 @job_bp.route('/company/post-job', methods=['GET', 'POST'])
 @login_required
@@ -130,9 +103,10 @@ def post_job():
     if request.method == 'POST':
         db = get_db()
         c = db.cursor()
-        c.execute("INSERT INTO jobs (company_id, title, description, location, salary, job_type, skills_required, experience_required) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+        c.execute('''INSERT INTO jobs (company_id, title, description, location, salary, job_type, skills_required, experience_required) 
+                     VALUES (%s,%s,%s,%s)''',
                   (session['user_id'], request.form['title'], request.form['description'], request.form['location'],
-                   request.form['salary'], request.form['job_type'], request.form.get('skills_required', ''), request.form.get('experience_required', '')))
+                   request.form['salary'], request.form['job_type'], request.form['skills_required'], request.form['experience_required']))
         db.commit()
         c.close()
         flash('Job posted successfully!', 'success')
@@ -151,15 +125,18 @@ def edit_job(job_id):
         c.close()
         flash('Job not found', 'error')
         return redirect(url_for('column.company_dashboard'))
+    
     if request.method == 'POST':
-        c.execute('''UPDATE jobs SET title=%s, description=%s, location=%s, salary=%s, job_type=%s, skills_required=%s, experience_required=%s
-                      WHERE id=%s AND company_id=%s''',
-                  (request.form['title'], request.form['description'], request.form['location'], request.form['salary'],
-                   request.form['job_type'], request.form.get('skills_required', ''), request.form.get('experience_required', ''), job_id, session['user_id']))
+        c.execute('''UPDATE jobs SET title=%s, description=%s, location=%s, salary=%s, job_type=%s, 
+                     skills_required=%s, experience_required=%s WHERE id=%s''',
+                  (request.form['title'], request.form['description'], request.form['location'],
+                   request.form['salary'], request.form['job_type'], request.form['skills_required'], 
+                   request.form['experience_required'], job_id))
         db.commit()
         c.close()
-        flash('Job updated successfully!', 'success')
+        flash('Job updated!', 'success')
         return redirect(url_for('column.company_dashboard'))
+    
     c.close()
     return render_template('edit_job.html', job=job)
 
@@ -172,16 +149,5 @@ def delete_job(job_id):
     c.execute("DELETE FROM jobs WHERE id = %s AND company_id = %s", (job_id, session['user_id']))
     db.commit()
     c.close()
-    flash('Job deleted successfully!', 'success')
+    flash('Job deleted', 'success')
     return redirect(url_for('column.company_dashboard'))
-
-@job_bp.route('/company/manage-jobs')
-@login_required
-@company_required
-def manage_jobs():
-    db = get_db()
-    c = db.cursor()
-    c.execute("SELECT * FROM jobs WHERE company_id = %s ORDER BY created_at DESC", (session['user_id'],))
-    jobs = c.fetchall()
-    c.close()
-    return render_template('manage_jobs.html', jobs=jobs)
