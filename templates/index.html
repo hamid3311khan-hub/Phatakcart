@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% block title %}SureJob - Find Your Dream Job{% endblock %}
 {% block content %}
 <div class="p-5 mb-4 bg-light rounded-3 text-center">
     <h1 class="display-5 fw-bold">Find Your Dream Job</h1>
     <p class="fs-5">Thousands of jobs from top companies. Shine style search with advanced filters.</p>
-    <a href="{{ url_for('job.jobs') }}" class="btn btn-primary btn-lg me-2">Browse All Jobs</a>
+    <a href="{{ url_for('jobs.job_list') }}" class="btn btn-primary btn-lg me-2">Browse All Jobs</a>
     <a href="{{ url_for('candidate_register') }}" class="btn btn-outline-primary btn-lg">Register Free</a>
 </div>
 
@@ -18,12 +19,16 @@
                 <p class="small mb-1"><i class="bi bi-geo-alt"></i> {{ job.location }}</p>
                 <p class="small mb-2"><i class="bi bi-cash"></i> {{ job.salary }}</p>
                 <span class="badge bg-secondary mb-2">{{ job.job_type }}</span>
-                <a href="{{ url_for('job.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                <a href="{{ url_for('jobs.job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
             </div>
         </div>
     </div>
     {% else %}
-    <p class="text-center">No jobs posted yet. Be the first company to <a href="{{ url_for('company_register') }}">post a job</a>!</p>
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No jobs posted yet. Be the first company to <a href="{{ url_for('company_register') }}">post a job</a>!
+        </div>
+    </div>
     {% endfor %}
 </div>
 
