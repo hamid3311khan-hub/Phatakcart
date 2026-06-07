@@ -79,7 +79,7 @@ def candidate_register():
         db = get_db()
         c = db.cursor()
         try:
-            c.execute("INSERT INTO users (name, email, password, role, location, skills, experience, phone, education, about) VALUES (%s,%s,%s,%s)",
+            c.execute("INSERT INTO users (name, email, password, role, location, skills, experience, phone, education, about) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                       (request.form['name'], request.form['email'], generate_password_hash(request.form['password']),
                        'candidate', request.form.get('location',''), request.form.get('skills',''),
                        request.form.get('experience',''), request.form.get('phone',''), request.form.get('education',''), request.form.get('about','')))
@@ -99,7 +99,7 @@ def company_register():
         db = get_db()
         c = db.cursor()
         try:
-            c.execute("INSERT INTO users (name, email, password, role, location, phone, about) VALUES (%s,%s,%s)",
+            c.execute("INSERT INTO users (name, email, password, role, location, phone, about) VALUES (%s,%s,%s,%s,%s)",
                       (request.form['name'], request.form['email'], generate_password_hash(request.form['password']),
                        'company', request.form.get('location',''), request.form.get('phone',''), request.form.get('about','')))
             db.commit()
