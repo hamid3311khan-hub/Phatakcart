@@ -33,20 +33,20 @@
                     {% if applied %}
                         <button class="btn btn-success w-100 mb-2" disabled><i class="bi bi-check-circle"></i> Already Applied</button>
                     {% else %}
-                        <form action="{{ url_for('job.apply_job', job_id=job.id) }}" method="POST">
+                        <form action="{{ url_for('jobs.apply_job', job_id=job.id) }}" method="POST">
                             <button type="submit" class="btn btn-primary w-100 mb-2"><i class="bi bi-send"></i> Apply Now</button>
                         </form>
                     {% endif %}
-                    <form action="{{ url_for('job.save_job', job_id=job.id) }}" method="POST">
+                    <form action="{{ url_for('jobs.save_job', job_id=job.id) }}" method="POST">
                         <button type="submit" class="btn btn-{% if saved %}warning{% else %}outline-warning{% endif %} w-100">
                             <i class="bi bi-bookmark-{% if saved %}fill{% else %}heart{% endif %}"></i> {% if saved %}Saved{% else %}Save Job{% endif %}
                         </button>
                     </form>
                 {% elif not session.user_id %}
-                    <a href="{{ url_for('candidate_login') }}" class="btn btn-primary w-100 mb-2">Login to Apply</a>
-                    <a href="{{ url_for('candidate_register') }}" class="btn btn-outline-primary w-100">New User? Register</a>
+                    <a href="{{ url_for('auth.candidate_login') }}" class="btn btn-primary w-100 mb-2">Login to Apply</a>
+                    <a href="{{ url_for('auth.candidate_register') }}" class="btn btn-outline-primary w-100">New User? Register</a>
                 {% else %}
-                    <a href="#" class="btn btn-secondary w-100 mb-2 disabled">Login as Candidate</a>
+                    <button class="btn btn-secondary w-100 mb-2" disabled>Login as Candidate</button>
                 {% endif %}
             </div>
         </div>
