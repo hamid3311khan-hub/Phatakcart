@@ -1,9 +1,11 @@
-from flask import Flask, g, render_template, request, jsonify
+from flask import Flask, jsonify
 from db import get_db, init_app
+from job_routes import job_bp
 import os
 
 app = Flask(__name__)
 init_app(app)
+app.register_blueprint(job_bp)
 
 @app.route('/')
 def home():
