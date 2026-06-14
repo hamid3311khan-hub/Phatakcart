@@ -1,11 +1,11 @@
 import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 from flask import g
 
 def get_db():
     if 'db' not in g:
-        g.db = psycopg2.connect(os.environ['DATABASE_URL'], cursor_factory=RealDictCursor)
+        g.db = psycopg.connect(os.environ['DATABASE_URL'], row_factory=dict_row)
     return g.db
 
 def close_db(e=None):
