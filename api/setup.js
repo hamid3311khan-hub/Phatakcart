@@ -7,7 +7,6 @@ const pool = new Pool({
 
 module.exports = async (req, res) => {
   try {
-    // Table banao
     await pool.query(`
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
@@ -17,7 +16,6 @@ module.exports = async (req, res) => {
       )
     `);
 
-    // Data daalo
     await pool.query(`
       INSERT INTO products (name, price, category) VALUES
       ('Chicken Biryani', 250, 1),
@@ -28,11 +26,12 @@ module.exports = async (req, res) => {
       ('Jeans', 899, 2),
       ('T-Shirt', 399, 2),
       ('Aashirvaad Atta 5kg', 280, 3),
-      ('Tata Salt 1kg', 25, 3)
+      ('Tata Salt 1kg', 25, 3),
+      ('Fortune Oil 1L', 130, 3)
       ON CONFLICT DO NOTHING
     `);
 
-    res.json({ message: 'Database setup complete. Products added.' });
+    res.json({ message: 'Database setup complete. 10 products added.' });
   } catch (err) {
     console.error('Setup Error:', err);
     res.status(500).json({ error: err.message });
