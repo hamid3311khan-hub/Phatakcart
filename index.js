@@ -1,24 +1,18 @@
-const express = require('express');
-const path = require('path');
-const app = express();
-const port = process.env.PORT || 3000;
+const express = require('express')
+const path = require('path')
+const app = express()
+const port = process.env.PORT || 10000
 
-app.use(express.json());
-app.use(express.static('public'));
+// YE 2 LINES SABSE ZARURI HAIN ⚠️
+app.use(express.json()) // API ke liye POST data padhne ke liye
+app.use(express.static('public')) // HTML files serve karne ke liye
 
-// API Routes
-app.use('/api/products', require('./api/products'));
-app.use('/api/setup', require('./api/setup'));
-
-// HTML Routes
-app.get('/food', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'food.html'));
-});
-
+// Home page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
 
+// Server start
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  console.log(`Server running on port ${port}`)
+})
