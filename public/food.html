@@ -1,36 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Phatakcart - Food</title>
+  <title>Food - Phatakcart</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-   .product { border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 8px; }
+    .product { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+    button { background: orange; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+    button:disabled { background: gray; }
+    #cart-link { position: fixed; top: 20px; right: 20px; background: green; color: white; padding: 10px; }
   </style>
 </head>
 <body>
-  <h1>Food Items</h1>
+  <a href="/cart" id="cart-link">🛒 Cart Dekho</a>
+  <h1>🍗 Food Items</h1>
   <div id="products">Loading...</div>
 
-  <script>
-    fetch('/api/products?category=1')
-     .then(res => res.json())
-     .then(data => {
-        const container = document.getElementById('products');
-        if (data.length === 0) {
-          container.innerHTML = 'No products found';
-          return;
-        }
-        container.innerHTML = data.map(p => `
-          <div class="product">
-            <h3>${p.name}</h3>
-            <p>Price: ₹${p.price}</p>
-          </div>
-        `).join('');
-      })
-     .catch(err => {
-        document.getElementById('products').innerHTML = 'Error loading products';
-        console.error(err);
-      });
-  </script>
+<script>
+let allProducts = []
+
+// 1. Products load karo
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/products')
+    allProducts = await res.json()
+    
+    let html = ''
+    allProducts.forEach(p => {
+      html += `
+        <div class="product">
+          <h3>${p.name}</h3>
+          <p>₹${p.price}</p>
+          <button onclick="addToCart(${p.id})" id="btn-${p.id}">
+            Add to Cart
+          </button>
+        </div>
+      `
+    })
+    
+    document.getElementById('products').innerHTML = html
+  } catch (err) {
+    document.getElementById('products').innerHTML = 'Error: ' + err
+  }
+}
+
+// 2. Cart mein add karo
+async function addToCart(productId) {
+  const btn = document.getElementById(`btn-${productId}`)
+  btn.disabled = true
+  btn.innerText = 'Adding...'
+  
+  try {
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: productId, qty: 1 })
+    })
+    
+    const data = await res.json()
+    
+    if (data.success) {
+      btn.innerText = 'Added ✓'
+      setTimeout(() => {
+        btn.disabled = false
+        btn.innerText = 'Add to Cart'
+      }, 1500)
+    } else {
+      throw new Error('Failed')
+    }
+  } catch (err) {
+    btn.innerText = 'Error'
+    alert('Cart mein add nahi hua. Phir try kar.')
+    btn.disabled = false
+    btn.innerText = 'Add to Cart'
+  }
+}
+
+loadProducts()
+</script>
 </body>
 </html>
