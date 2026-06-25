@@ -20,27 +20,12 @@ app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'))
 })
 
-// API ROUTES
-app.get('/api/products', (req, res) => {
-  res.json([
-    { id: 1, name: 'Chicken Biryani', price: 250 },
-    { id: 2, name: 'Paneer Tikka', price: 180 }
-  ])
-})
-
-app.get('/api/cart', (req, res) => {
-  res.json([
-    { id: 1, name: 'Chicken Biryani', price: 250, qty: 2 },
-    { id: 3, name: 'Veg Burger', price: 80, qty: 1 }
-  ])
-})
-
-app.get('/api/setup', (req, res) => {
-  res.json({ status: 'DB Connected' })
-})
+// API ROUTES - AB ALAG FILES SE AAYENGE
+app.use('/api/cart', require('./api/cart'))
+app.use('/api/products', require('./api/products'))
+app.use('/api/setup', require('./api/setup'))
 
 // SERVER START
-app.use('/api/cart', require('./api/cart'))
 app.listen(port, () => {
   console.log(`Server running on port ${port}`)
 })
