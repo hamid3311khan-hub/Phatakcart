@@ -54,5 +54,22 @@ router.delete('/:id', (req, res) => {
   cartItems = cartItems.filter(item => item.id !== id)
   res.json({ success: true, message: 'Item remove ho gaya' })
 })
-
+// PUT /api/cart/:id - Quantity Update karo
+router.put('/:id', (req, res) => {
+  const id = parseInt(req.params.id)
+  const { qty } = req.body
+  
+  const item = cartItems.find(item => item.id === id)
+  if (!item) {
+    return res.status(404).json({ success: false })
+  }
+  
+  item.qty = qty
+  if (item.qty <= 0) {
+    // 0 ho jaye to remove kar do
+    cartItems = cartItems.filter(item => item.id !== id)
+  }
+  
+  res.json({ success: true, message: 'Quantity updated' })
+})
 module.exports = router
