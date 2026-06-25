@@ -7,9 +7,16 @@ const pool = new Pool({
 
 module.exports = async (req, res) => {
   try {
+    // PURANE TABLE UDA DE - Fresh start
+    await pool.query('DROP TABLE IF EXISTS order_items CASCADE');
+    await pool.query('DROP TABLE IF EXISTS orders CASCADE');
+    await pool.query('DROP TABLE IF EXISTS cart CASCADE');
+    await pool.query('DROP TABLE IF EXISTS products CASCADE');
+    await pool.query('DROP TABLE IF EXISTS vendors CASCADE');
+
     // Vendors table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS vendors (
+      CREATE TABLE vendors (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         phone VARCHAR(20) UNIQUE NOT NULL,
@@ -21,7 +28,7 @@ module.exports = async (req, res) => {
 
     // Products table with vendor
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS products (
+      CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         vendor_id INTEGER REFERENCES vendors(id),
         name VARCHAR(100) NOT NULL,
@@ -37,7 +44,7 @@ module.exports = async (req, res) => {
 
     // Cart table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS cart (
+      CREATE TABLE cart (
         id SERIAL PRIMARY KEY,
         product_id INTEGER REFERENCES products(id),
         qty INTEGER NOT NULL,
@@ -47,7 +54,7 @@ module.exports = async (req, res) => {
 
     // Orders table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS orders (
+      CREATE TABLE orders (
         id SERIAL PRIMARY KEY,
         order_id VARCHAR(20) UNIQUE NOT NULL,
         vendor_id INTEGER REFERENCES vendors(id),
@@ -64,7 +71,7 @@ module.exports = async (req, res) => {
 
     // Order items table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS order_items (
+      CREATE TABLE order_items (
         id SERIAL PRIMARY KEY,
         order_id VARCHAR(20) REFERENCES orders(order_id),
         product_id INTEGER REFERENCES products(id),
@@ -77,7 +84,6 @@ module.exports = async (req, res) => {
     await pool.query(`
       INSERT INTO vendors (name, phone, shop_name, password) VALUES
       ('Phatak Admin', '9999999999', 'Phatakcart', 'admin123')
-      ON CONFLICT (phone) DO NOTHING
     `);
 
     // Default products
@@ -89,14 +95,13 @@ module.exports = async (req, res) => {
       (1, 'Chicken Roll', 120, 100, 1, 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=300', 'Spicy Roll'),
       (1, 'Cheese Pizza', 299, 249, 1, 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300', 'Extra Cheese'),
       (1, 'Veg Momos', 100, 80, 1, 'https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?w=300', 'Steamed Hot'),
-      (1, 'Samosa', 20, 15, 1, 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300', '2 for 30'),
-      (1, 'Masala Dosa', 90, 70, 1, 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300', 'South Special'),
-      (1, 'Chicken 65', 220, 180, 1, 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300', 'Boneless'),
-      (1, 'Cold Coffee', 60, 50, 1, 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300', 'Chilled')
-      ON CONFLICT DO NOTHING
+      (1, 'Cotton Kurta', 599, 499, 2, 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300', 'Pure Cotton'),
+      (1, 'Jeans', 899, 699, 2, 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300', 'Slim Fit'),
+      (1, 'Aashirvaad Atta 5kg', 280, 250, 3, 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300', 'Chakki Fresh'),
+      (1, 'Tata Salt 1kg', 25, 20, 3, 'https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?w=300', 'Iodized')
     `);
 
-    res.json({ message: 'Database setup complete. All tables ready.' });
+    res.json({ message: 'Database reset complete. All tables ready with vendor_id.' });
   } catch (err) {
     console.error('Setup Error:', err);
     res.status(500).json({ error: err.message });
