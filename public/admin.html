@@ -1,1 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - MyShop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; }
+    .header { background: #232f3e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 22px; }
+    .header button { background: #ff9900; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .stat-card h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+    .stat-card .number { font-size: 32px; font-weight: bold; color: #232f3e; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+    .tab { padding: 10px 20px; background: none; border: none; cursor: pointer; font-size: 15px; }
+    .tab.active { border-bottom: 3px solid #ff9900; color: #ff9900; font-weight: bold; }
+    .content { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f8f8f8; font-weight: bold; font-size: 13px; }
+    td { font-size: 14px; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 5px; }
+    .btn-approve { background: #4caf50; color: white; }
+    .btn-reject { background: #f44336; color: white; }
+    .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+    .badge-pending { background: #fff3cd; color: #856404; }
+    .badge-approved { background: #d4edda; color: #155724; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+    <div>
+      <span id="adminName">Admin</span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
 
+  <div class="container">
+    <!-- STATS -->
+    <div class="stats" id="stats">
+      <div class="stat-card">
+        <h3>Total Vendors</h3>
+        <div class="number" id="totalVendors">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Approval</h3>
+        <div class="number" id="pendingVendors">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Products</h3>
+        <div class="number" id="totalProducts">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Orders</h3>
+        <div class="number" id="totalOrders">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <div class="number">₹<span id="totalRevenue">0</span></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('vendors')">Vendors</button>
+      <button class="tab" onclick="switchTab('products')">My Products</button>
+      <button class="tab" onclick="switchTab('orders')">Orders</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let admin = JSON.parse(localStorage.getItem('user') || 'null');
+    let userType = localStorage.getItem('userType');
+
+    // Check admin login
+    window.onload = function() {
+      if (!admin || userType !== 'admin') {
+        alert('Please login as admin');
+        window.location.href = '/login.html';
+        return;
+      }
+      document.getElementById('adminName').textContent = admin.name;
+      loadStats();
+      loadVendors();
+    };
+
+    // Stats load karo
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_URL}/admin?action=stats`);
+        const data = await res.json();
+        document.getElementById('totalVendors').textContent = data.total_vendors;
+        document.getElementById('pendingVendors').textContent = data.pending_vendors;
+        document.getElementById('totalProducts').textContent = data.total_products;
+        document.getElementById('totalOrders').textContent = data.total_orders;
+        document.getElementById('totalRevenue').textContent = data.total_revenue;
+      } catch (error) {}
+    }
+
+    // Tab switch
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      if (tab === 'vendors') loadVendors();
+      if (tab === 'products') loadProducts();
+      if (tab === 'orders') loadOrders();
+    }
+
+    // Vendors list
+    async function loadVendors() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div class="loading">Loading vendors...</div>';
+      
+      try {
+        const res = await fetch(`${API_URL}/admin?action=vendors`);
+        const data = await res.json();
+        
+        if (data.vendors.length === 0) {
+          content.innerHTML = '<div class="loading">No vendors yet</div>';
+          return;
+        }
+
+        content.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Shop Name</th>
+                <th>Owner</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.vendors.map(v => `
+                <tr>
+                  <td>${v.shop_name}</td>
+                  <td>${v.owner_name}</td>
+                  <td>${v.email}</td>
+                  <td>${v.phone}</td>
+                  <td>
+                    <span class="badge ${v.is_approved ? 'badge-approved' : 'badge-pending'}">
+                      ${v.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </td>
+                  <td>
+                    ${!v.is_approved ? `
+                      <button class="btn btn-approve" onclick="approveVendor(${v.id})">Approve</button>
+                      <button class="btn btn-reject" onclick="rejectVendor(${v.id})">Reject</button>
+                    ` : 'Approved'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        content.innerHTML = '<div class="loading">Error loading vendors</div>';
+      }
+    }
+
+    // Approve vendor
+    async function approveVendor(id) {
+      if (!confirm('Approve this vendor?')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/admin?action=approve-vendor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendor_id: id })
+        });
+        
+        if (res.ok) {
+          alert('Vendor approved!');
+          loadVendors();
+          loadStats();
+        }
+      } catch (error) {
+        alert('Error approving vendor');
+      }
+    }
+
+    // Reject vendor
+    async function rejectVendor(id) {
+      if (!confirm('Reject this vendor? This will delete their account.')) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/admin?action=reject-vendor`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendor_id: id })
+        });
+        
+        if (res.ok) {
+          alert('Vendor rejected!');
+          loadVendors();
+          loadStats();
+        }
+      } catch (error) {
+        alert('Error rejecting vendor');
+      }
+    }
+
+    // Products list - tere products
+    async function loadProducts() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div class="loading">Loading products...</div>';
+      
+      try {
+        const res = await fetch(`${API_URL}/admin?action=my-products&admin_id=${admin.id}`);
+        const data = await res.json();
+        
+        content.innerHTML = `
+          <button class="btn btn-approve" onclick="alert('Add product feature coming soon')">+ Add New Product</button>
+          <br><br>
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.products.length === 0 ? '<tr><td colspan="5" style="text-align:center">No products yet</td></tr>' : 
+                data.products.map(p => `
+                  <tr>
+                    <td><img src="${p.image_url || 'https://via.placeholder.com/50'}" width="50"></td>
+                    <td>${p.name}</td>
+                    <td>₹${p.offer_price || p.price}</td>
+                    <td>${p.stock}</td>
+                    <td><button class="btn btn-reject" onclick="deleteProduct(${p.id})">Delete</button></td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        content.innerHTML = '<div class="loading">Error loading products</div>';
+      }
+    }
+
+    // Orders list
+    async function loadOrders() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div class="loading">Loading orders...</div>';
+      
+      try {
+        const res = await fetch(`${API_URL}/admin?action=orders`);
+        const data = await res.json();
+        
+        content.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.orders.length === 0 ? '<tr><td colspan="5" style="text-align:center">No orders yet</td></tr>' : 
+                data.orders.map(o => `
+                  <tr>
+                    <td>#${o.id}</td>
+                    <td>${o.customer_name}</td>
+                    <td>₹${o.total_amount}</td>
+                    <td><span class="badge badge-approved">${o.status}</span></td>
+                    <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        content.innerHTML = '<div class="loading">Error loading orders</div>';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      localStorage.removeItem('userType');
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+          </html>
