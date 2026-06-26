@@ -3,127 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phatakcart - Home</title>
+  <title>Multi-Vendor Shop</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: Arial, sans-serif; 
-      background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      width: 100%;
-      background: white;
-      border-radius: 20px;
-      padding: 40px 30px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      text-align: center;
-    }
-    .logo {
-      font-size: 50px;
-      margin-bottom: 10px;
-    }
-    h1 { 
-      color: #ff6f00; 
-      margin-bottom: 10px;
-      font-size: 32px;
-    }
-    .tagline {
-      color: #666;
-      margin-bottom: 40px;
-      font-size: 16px;
-    }
-    .menu-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .menu-btn {
-      background: #ff6f00;
-      color: white;
-      border: none;
-      padding: 25px 20px;
-      border-radius: 12px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-    .menu-btn:hover {
-      background: #e65100;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(255,111,0,0.4);
-    }
-    .menu-btn .icon {
-      font-size: 35px;
-    }
-    .vendor-btn {
-      background: #00c853;
-      grid-column: 1 / -1;
-    }
-    .vendor-btn:hover {
-      background: #00a043;
-      box-shadow: 0 5px 15px rgba(0,200,83,0.4);
-    }
-    .footer {
-      margin-top: 30px;
-      color: #999;
-      font-size: 14px;
-    }
-    @media (max-width: 480px) {
-      .menu-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 26px; }
-      .container { padding: 30px 20px; }
-    }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; }
+    .header { background: #232f3e; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 24px; }
+    .header-buttons button { background: #ff9900; border: none; padding: 8px 15px; margin-left: 10px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .categories { background: white; padding: 10px; display: flex; gap: 15px; overflow-x: auto; border-bottom: 1px solid #ddd; }
+    .categories button { background: #f0f0f0; border: 1px solid #ddd; padding: 8px 15px; cursor: pointer; border-radius: 20px; white-space: nowrap; }
+    .categories button.active { background: #ff9900; color: white; border-color: #ff9900; }
+    .products { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .product-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
+    .product-card img { width: 100%; height: 200px; object-fit: cover; }
+    .product-info { padding: 10px; }
+    .product-name { font-size: 14px; margin-bottom: 5px; height: 40px; overflow: hidden; }
+    .product-price { font-weight: bold; font-size: 18px; color: #B12704; }
+    .product-mrp { text-decoration: line-through; color: #666; font-size: 12px; }
+    .seller { font-size: 11px; color: #007185; margin-top: 5px; }
+    .loading { text-align: center; padding: 50px; font-size: 18px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">🛒</div>
-    <h1>Phatakcart</h1>
-    <p class="tagline">Sab kuch ek jagah - Food, Dress, Grocery</p>
-
-    <div class="menu-grid">
-      <a href="/food" class="menu-btn">
-        <span class="icon">🍔</span>
-        <span>Food</span>
-      </a>
-      
-      <a href="/dress" class="menu-btn">
-        <span class="icon">👗</span>
-        <span>Dress</span>
-      </a>
-      
-      <a href="/grocery" class="menu-btn">
-        <span class="icon">🛒</span>
-        <span>Grocery</span>
-      </a>
-      
-      <a href="/cart" class="menu-btn">
-        <span class="icon">🛍️</span>
-        <span>Cart</span>
-      </a>
-
-      <a href="/vendor" class="menu-btn vendor-btn">
-        <span class="icon">🏪</span>
-        <span>Vendor Dashboard</span>
-      </a>
-    </div>
-
-    <div class="footer">
-      <p>Made with ❤️ in Mumbai</p>
+  <div class="header">
+    <h1>MyShop</h1>
+    <div class="header-buttons">
+      <button onclick="goToLogin()">Login</button>
+      <button onclick="goToCart()">Cart (<span id="cartCount">0</span>)</button>
+      <button onclick="goToVendor()">Become Seller</button>
     </div>
   </div>
+
+  <div class="categories">
+    <button class="active" onclick="loadProducts('')">All</button>
+    <button onclick="loadProducts('grocery')">Grocery</button>
+    <button onclick="loadProducts('food')">Food</button>
+    <button onclick="loadProducts('dress')">Dress</button>
+    <button onclick="loadProducts('electronics')">Electronics</button>
+  </div>
+
+  <div id="products" class="products">
+    <div class="loading">Loading products...</div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+
+    // Page load pe products load karo
+    window.onload = function() {
+      loadProducts('');
+      updateCartCount();
+      if (currentUser) {
+        document.querySelector('.header-buttons button').textContent = currentUser.name;
+      }
+    };
+
+    // Products load karne ka function
+    async function loadProducts(category) {
+      document.querySelectorAll('.categories button').forEach(btn => btn.classList.remove('active'));
+      event?.target?.classList.add('active');
+
+      const url = category ? `${API_URL}/products?category=${category}` : `${API_URL}/products`;
+      
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const productsDiv = document.getElementById('products');
+        
+        if (data.products.length === 0) {
+          productsDiv.innerHTML = '<div class="loading">No products found</div>';
+          return;
+        }
+
+        productsDiv.innerHTML = data.products.map(p => `
+          <div class="product-card" onclick="viewProduct(${p.id})">
+            <img src="${p.image_url || 'https://via.placeholder.com/200'}" alt="${p.name}">
+            <div class="product-info">
+              <div class="product-name">${p.name}</div>
+              <div class="product-price">₹${p.offer_price || p.price}</div>
+              ${p.offer_price ? `<div class="product-mrp">M.R.P: ₹${p.price}</div>` : ''}
+              <div class="seller">Sold by: ${p.seller_type === 'admin' ? 'MyShop' : p.shop_name}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        document.getElementById('products').innerHTML = '<div class="loading">Error loading products</div>';
+      }
+    }
+
+    // Product detail page
+    function viewProduct(id) {
+      window.location.href = `/product.html?id=${id}`;
+    }
+
+    // Cart count update
+    async function updateCartCount() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_URL}/cart?action=view&user_id=${currentUser.id}`);
+        const data = await res.json();
+        const count = data.cart.reduce((sum, item) => sum + item.quantity, 0);
+        document.getElementById('cartCount').textContent = count;
+      } catch (error) {}
+    }
+
+    // Buttons
+    function goToLogin() {
+      if (currentUser) {
+        alert('Already logged in as ' + currentUser.name);
+      } else {
+        window.location.href = '/login.html';
+      }
+    }
+
+    function goToCart() {
+      if (!currentUser) {
+        alert('Please login first');
+        window.location.href = '/login.html';
+        return;
+      }
+      window.location.href = '/cart.html';
+    }
+
+    function goToVendor() {
+      window.location.href = '/register.html';
+    }
+  </script>
 </body>
-          </html>
+  </html>
