@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vendor Registration - Phatakcart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial; background: #f5f5f5; padding: 20px; margin: 0; }
+   .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #ff6f00; text-align: center; margin-bottom: 10px; }
+   .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+    input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    input:focus, textarea:focus { border-color: #ff6f00; outline: none; }
+    label { font-weight: bold; color: #333; display: block; margin-top: 15px; margin-bottom: 5px; }
+   .file-box { border: 2px dashed #ff6f00; background: #fff9f0; padding: 15px; border-radius: 8px; margin: 8px 0; }
+   .file-box small { color: #666; display: block; margin-top: 5px; }
+    button { background: #ff6f00; color: white; border: none; padding: 15px; cursor: pointer; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; }
+    button:hover { background: #e65100; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+   .login-link { text-align: center; margin-top: 20px; color: #666; }
+   .login-link a { color: #ff6f00; text-decoration: none; font-weight: bold; }
+   .error { color: red; font-size: 12px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏪 Vendor Registration</h1>
+    <p class="subtitle">Phatakcart pe apna shop start karo</p>
+
+    <form id="registerForm" enctype="multipart/form-data">
+      <label>Shop Name *</label>
+      <input type="text" name="shop_name" placeholder="Apne shop ka naam" required>
+
+      <label>Owner Name *</label>
+      <input type="text" name="owner_name" placeholder="Apna pura naam" required>
+
+      <label>Phone Number *</label>
+      <input type="tel" name="phone" placeholder="10 digit mobile number" pattern="[0-9]{10}" required>
+
+      <label>Password *</label>
+      <input type="password" name="password" placeholder="Strong password banao" minlength="6" required>
+
+      <label>Shop Address *</label>
+      <textarea name="address" placeholder="Pura address with pincode" rows="3" required></textarea>
+
+      <label>Aadhar Card Upload *</label>
+      <div class="file-box">
+        <input type="file" name="aadhar" accept=".jpg,.jpeg,.png,.pdf" required>
+        <small>JPG, PNG ya PDF. Max 5MB</small>
+      </div>
+
+      <label>Electricity Bill Upload *</label>
+      <div class="file-box">
+        <input type="file" name="electricity" accept=".jpg,.jpeg,.png,.pdf" required>
+        <small>Latest 3 mahine ka bill. JPG, PNG ya PDF. Max 5MB</small>
+      </div>
+
+      <button type="submit" id="submitBtn">Register Karo</button>
+    </form>
+
+    <div class="login-link">
+      Already registered? <a href="/vendor">Login karo</a>
+    </div>
+  </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerText = 'Upload ho raha hai...';
+
+  const formData = new FormData(e.target);
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      alert('Registration successful! Admin approval ke baad login kar payoge.');
+      window.location.href = '/vendor';
+    } else {
+      alert('Error: ' + data.error);
+      btn.disabled = false;
+      btn.innerText = 'Register Karo';
+    }
+  } catch (err) {
+    alert('Network error. Try again.');
+    btn.disabled = false;
+    btn.innerText = 'Register Karo';
+  }
+});
+</script>
+</body>
+          </html>
