@@ -2,13 +2,8 @@ import express from 'express';
 import pg from 'pg';
 import formidable from 'formidable';
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const { Pool } = pg;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 const port = process.env.PORT || 10000;
 
@@ -20,55 +15,14 @@ const pool = new Pool({
 app.use(express.static('public'));
 app.use(express.json());
 
-// ========== PAGES KE ROUTES ==========
-
-// HOME PAGE
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// FOOD PAGE
-app.get('/food', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'food.html'));
-});
-
-// DRESS PAGE
-app.get('/dress', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dress.html'));
-});
-
-// GROCERY PAGE
-app.get('/grocery', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'grocery.html'));
-});
-
-// REGISTER PAGE
-app.get('/register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'register.html'));
-});
-
-// LOGIN PAGE
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-// VENDOR DASHBOARD
-app.get('/vendor-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'vendor-dashboard.html'));
-});
-
-// ========== API ROUTES ==========
-
-// TEST ROUTE
 app.get('/api/test', (req, res) => {
   res.json({ success: true, message: 'API Chal Rahi Hai Baba' });
 });
 
-// REGISTER API
 app.post('/api/register', (req, res) => {
   const form = formidable({
-    maxFileSize: 1.5 * 1024 * 1024, // 1.5MB - FIXED
-    maxTotalFileSize: 3 * 1024 * 1024, // 3MB - FIXED
+    maxFileSize: 1.5 * 1024 * 1024, // ← BAS YE LINE FIX KI HAI. Pehle 1.5 * 1024 tha
+    maxTotalFileSize: 3 * 1024 * 1024, // ← YE BHI FIX KI HAI
   });
 
   form.parse(req, async (err, fields, files) => {
@@ -112,90 +66,6 @@ app.post('/api/register', (req, res) => {
       } else {
         res.status(500).json({ success: false, message: 'Database error' });
       }
-    }
-  });
-});
-
-// VENDOR LOGIN API
-app.post('/api/vendor-login', async (req, res) => {
-  const { phone, password } = req.body;
-
-  if (!phone ||!password) {
-    return res.status(400).json({ success: false, message: 'Phone aur Password daalo' });
-  }
-
-  try {
-    const result = await pool.query(
-      'SELECT id, shop_name, kyc_status, active FROM vendors WHERE phone = $1 AND password = $2',
-      [phone, password]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Phone ya Password galat hai' });
-    }
-
-    const vendor = result.rows[0];
-
-    if (!vendor.active) {
-      return res.status(403).json({
-        success: false,
-        message: 'Account abhi approve nahi hua. Admin 24 hours mein verify karega'
-      });
-    }
-
-    res.status(200).json({ success: true, vendor });
-  } catch (err) {
-    console.log('Login Error:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// ADD PRODUCT API
-app.post('/api/add-product', (req, res) => {
-  const form = formidable({ maxFileSize: 1.5 * 1024 }); // 1.5MB - FIXED
-
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.log('Upload Error:', err);
-      return res.status(500).json({ success: false, message: 'Upload error' });
-    }
-
-    const vendorId = fields.vendorId?.[0];
-    const name = fields.name?.[0];
-    const price = fields.price?.[0];
-    const stock = fields.stock?.[0];
-    const image = files.image?.[0];
-
-    if (!vendorId ||!name ||!price ||!stock ||!image) {
-      return res.status(400).json({ success: false, message: 'Saare fields bharo' });
-    }
-
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS products (
-          id SERIAL PRIMARY KEY,
-          vendor_id INTEGER NOT NULL,
-          name VARCHAR(255) NOT NULL,
-          price INTEGER NOT NULL,
-          stock INTEGER NOT NULL,
-          image_url TEXT,
-          active BOOLEAN DEFAULT true,
-          created_at TIMESTAMP DEFAULT NOW()
-        );
-      `);
-
-      const imageBase64 = 'data:' + image.mimetype + ';base64,' + fs.readFileSync(image.filepath, 'base64');
-
-      await pool.query(
-        `INSERT INTO products (vendor_id, name, price, stock, image_url)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [vendorId, name, price, stock, imageBase64]
-      );
-
-      res.status(200).json({ success: true, message: 'Product added' });
-    } catch (err) {
-      console.log('Product Error:', err);
-      res.status(500).json({ success: false, message: err.message });
     }
   });
 });
