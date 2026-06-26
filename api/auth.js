@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -14,34 +15,55 @@ module.exports = async (req, res) => {
   const { action } = req.query;
 
   try {
-    if (action === 'register' && req.method === 'POST') {
-      const { name, email, password, phone, address } = req.body;
-      const hashed = await bcrypt.hash(password, 10);
+    if (action === 'signup' && req.method === 'POST') {
+      const { name, email, password } = req.body;
+      
+      if (!name ||!email ||!password) {
+        return res.status(400).json({ error: 'All fields required' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
       
       const result = await pool.query(`
-        INSERT INTO users (name, email, password, phone, address)
-        VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role
-      `, [name, email, hashed, phone, address]);
-      
-      return res.status(200).json({ user: result.rows[0] });
+        INSERT INTO users (name, email, password, role) 
+        VALUES ($1, $2, $3, 'customer') 
+        RETURNING id, name, email, role
+      `, [name, email, hashedPassword]);
+
+      return res.status(200).json({ 
+        message: 'User created successfully',
+        user: result.rows[0] 
+      });
     }
 
     if (action === 'login' && req.method === 'POST') {
       const { email, password } = req.body;
-      const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
       
-      if (result.rows.length === 0) return res.status(401).json({ error: 'User not found' });
+      const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
       const user = result.rows[0];
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) return res.status(401).json({ error: 'Wrong password' });
+      const isValid = await bcrypt.compare(password, user.password);
       
-      delete user.password;
-      return res.status(200).json({ user });
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      return res.status(200).json({ 
+        message: 'Login successful',
+        user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      });
     }
 
-    return res.status(404).json({ error: 'Invalid action' });
+    return res.status(400).json({ error: 'Invalid action' });
+    
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
     res.status(500).json({ error: error.message });
   }
 };
