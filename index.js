@@ -20,6 +20,45 @@ const pool = new Pool({
 app.use(express.static('public'));
 app.use(express.json());
 
+// ========== PAGES KE ROUTES ==========
+
+// HOME PAGE
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// FOOD PAGE
+app.get('/food', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'food.html'));
+});
+
+// DRESS PAGE
+app.get('/dress', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dress.html'));
+});
+
+// GROCERY PAGE
+app.get('/grocery', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'grocery.html'));
+});
+
+// REGISTER PAGE
+app.get('/register', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+// LOGIN PAGE
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// VENDOR DASHBOARD
+app.get('/vendor-dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'vendor-dashboard.html'));
+});
+
+// ========== API ROUTES ==========
+
 // TEST ROUTE
 app.get('/api/test', (req, res) => {
   res.json({ success: true, message: 'API Chal Rahi Hai Baba' });
@@ -28,8 +67,8 @@ app.get('/api/test', (req, res) => {
 // REGISTER API
 app.post('/api/register', (req, res) => {
   const form = formidable({
-    maxFileSize: 1.5 * 1024,
-    maxTotalFileSize: 3 * 1024 * 1024,
+    maxFileSize: 1.5 * 1024 * 1024, // 1.5MB - FIXED
+    maxTotalFileSize: 3 * 1024 * 1024, // 3MB - FIXED
   });
 
   form.parse(req, async (err, fields, files) => {
@@ -113,7 +152,7 @@ app.post('/api/vendor-login', async (req, res) => {
 
 // ADD PRODUCT API
 app.post('/api/add-product', (req, res) => {
-  const form = formidable({ maxFileSize: 1.5 * 1024 * 1024 });
+  const form = formidable({ maxFileSize: 1.5 * 1024 }); // 1.5MB - FIXED
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
